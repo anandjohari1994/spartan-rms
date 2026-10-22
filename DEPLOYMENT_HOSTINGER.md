@@ -4,7 +4,7 @@ This guide deploys the existing Laravel 12 / Filament 4 application. No Redis, S
 
 ## 1. Hosting requirements
 
-Use a plan with PHP 8.3+, MySQL/MariaDB, HTTPS, private filesystem space, cron and sufficient memory for Composer and the application. Confirm SSH/Composer access and the selected plan's limits in hPanel. Laravel is supported on Hostinger Web/Cloud hosting; availability of account tools varies by plan. [Hostinger framework support](https://www.hostinger.com/support/which-programming-languages-and-frameworks-are-supported-at-hostinger/).
+Use a plan with PHP 8.2+, MySQL/MariaDB, HTTPS, private filesystem space, cron and sufficient memory for Composer and the application. Confirm SSH/Composer access and the selected plan's limits in hPanel. Laravel is supported on Hostinger Web/Cloud hosting; availability of account tools varies by plan. [Hostinger framework support](https://www.hostinger.com/support/which-programming-languages-and-frameworks-are-supported-at-hostinger/).
 
 Keep the locked Laravel 12 and Filament 4 versions. Run `composer install`, not `composer update`, during deployment. Node is needed only on the build machine; upload compiled assets to hosting.
 
@@ -157,7 +157,7 @@ Maintain daily encrypted backups of MySQL, `storage/app/rms-private`, the applic
 
 ## 14. Deployment verification
 
-- [ ] Confirm Laravel 12, Filament 4 and PHP 8.3+ through installed package metadata/platform checks.
+- [ ] Confirm Laravel 12, Filament 4 and PHP 8.2+ through installed package metadata/platform checks.
 - [ ] `/up` responds; `/admin/login` loads CSS and Livewire JavaScript.
 - [ ] Create the real administrator with `rms:create-admin`; verify no demo credentials or test database were deployed.
 - [ ] Create two HR test accounts; each can see only assigned candidates, including global search and related records.

@@ -4,7 +4,7 @@ Recruitment management for **Spartan Infosoft Pvt. Ltd.**, built inside the exis
 
 ## Requirements
 
-- PHP 8.3+ with intl, fileinfo, zip, mbstring, PDO MySQL and Laravel's standard extensions.
+- PHP 8.2+ with intl, fileinfo, zip, mbstring, PDO MySQL and Laravel's standard extensions.
 - MySQL or MariaDB for production. SQLite is supported for isolated automated tests.
 - Composer 2 and Node 20.19+ / 22.12+ for Vite builds. Keep the supplied lock files.
 - No Redis, Supervisor, Docker or permanent queue worker is needed.
