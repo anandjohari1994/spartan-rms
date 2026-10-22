@@ -1,0 +1,13 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+@source '../../../../app/Filament/**/*';
+@source '../../../../resources/views/filament/**/*';
+
+@theme {
+    --font-sans: 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
+}
+
+.fi-sidebar-header { border-bottom: 1px solid color-mix(in srgb, currentColor 8%, transparent); }
+.fi-logo { font-weight: 800; letter-spacing: -0.035em; }
+.fi-section, .fi-wi-stats-overview-stat { border-radius: 1rem; }
+.fi-header-heading { letter-spacing: -0.025em; }
+.fi-main { max-width: 100rem; }

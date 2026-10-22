@@ -1,0 +1,1 @@
+<div class="space-y-4"><h3 class="font-semibold">Previous values</h3><pre class="whitespace-pre-wrap text-sm">{{ json_encode($record->old_values, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre><h3 class="font-semibold">New values</h3><pre class="whitespace-pre-wrap text-sm">{{ json_encode($record->new_values, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre></div>
