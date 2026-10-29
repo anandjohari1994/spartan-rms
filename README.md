@@ -107,6 +107,8 @@ This command refuses production/remote hosts, creates a new randomly named `rms_
 | `resources/css/filament/admin/theme.css` | Responsive Filament theme |
 | `tests/Feature` and `tests/Support` | Security/workflow/UI tests and isolated smoke checks |
 
-New tables: `job_positions`, `candidates`, `interview_rounds`, `call_logs`, `follow_ups`, `candidate_documents`, `candidate_assignments`, `activity_logs`, `candidate_code_sequences`, `application_settings`. The existing `users` table gains `mobile`, `is_active`, `last_login_at`. Existing Spatie permission/session/cache tables are retained.
+New tables: `job_positions`, `candidates`, `interview_rounds`, `call_logs`, `follow_ups`, `candidate_documents`, `candidate_assignments`, `activity_logs`, `candidate_code_sequences`, `application_settings`, `candidate_email_batches`. The existing `users` table gains `mobile`, `is_active`, `last_login_at`. Existing Spatie permission/session/cache tables are retained.
+
+See [Candidate outreach](CANDIDATE_OUTREACH.md) for admin-only BCC email and bulk status actions, WhatsApp click-to-chat, SMTP setup, and the proposed assessment-to-offer automation workflow. Outreach verification: 40 tests / 227 assertions passed on PHP 8.2.12, including BCC privacy, permissions, duplicate attempts, atomic status changes and Livewire actions. Tests use an in-memory mail transport and do not send real messages.
 
 See [DEPLOYMENT_HOSTINGER.md](DEPLOYMENT_HOSTINGER.md) for production configuration, safe public-root layouts, cron, backups and release checks. See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for architectural decisions and [VERIFICATION.md](VERIFICATION.md) for verification results and remaining deployment work.

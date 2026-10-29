@@ -2,8 +2,11 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Support\AssessmentFollowUpAction;
 use App\Filament\Support\Fields;
+use App\Filament\Support\RecordCallAction;
 use App\Models\FollowUp;
+use App\Services\AssessmentFollowUpService;
 use App\Services\FollowUpService;
 use App\Support\Recruitment;
 use Filament\Actions\Action;
@@ -33,18 +36,19 @@ class FollowUpResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return $schema->components([Fields::candidate()->disabledOn('edit'), DateTimePicker::make('scheduled_at')->required()->seconds(false), Fields::select('priority', ['Low', 'Medium', 'High'])->default('Medium'), Fields::select('status', ['Pending', 'Completed', 'Cancelled'])->default('Pending'), Textarea::make('notes')->maxLength(10000)->columnSpanFull()]);
+        return $schema->components([Fields::candidate()->disabledOn('edit'), Fields::select('purpose', AssessmentFollowUpService::PURPOSES)->default('General'), DateTimePicker::make('scheduled_at')->required()->seconds(false), Fields::select('priority', ['Low', 'Medium', 'High'])->default('Medium'), Fields::select('status', ['Pending', 'Completed', 'Cancelled'])->default('Pending'), Textarea::make('notes')->maxLength(10000)->columnSpanFull()]);
     }
 
     public static function table(Table $table): Table
     {
-        return $table->columns([TextColumn::make('candidate.full_name')->searchable(), TextColumn::make('scheduled_at')->dateTime()->sortable(), TextColumn::make('priority')->badge(), TextColumn::make('status')->badge(), TextColumn::make('is_overdue')->label('Overdue')->formatStateUsing(fn ($state) => $state ? 'Overdue' : '—')->color('danger'), TextColumn::make('notes')->limit(80)])
+        return $table->columns([TextColumn::make('candidate.full_name')->searchable(), TextColumn::make('purpose')->badge(), TextColumn::make('scheduled_at')->dateTime()->sortable(), TextColumn::make('priority')->badge(), TextColumn::make('status')->badge(), TextColumn::make('is_overdue')->label('Overdue')->formatStateUsing(fn ($state) => $state ? 'Overdue' : '—')->color('danger'), TextColumn::make('notes')->limit(80)])
             ->defaultSort('scheduled_at')->filters([
+                SelectFilter::make('purpose')->options(Recruitment::options(AssessmentFollowUpService::PURPOSES)),
                 SelectFilter::make('status')->options(Recruitment::options(['Pending', 'Completed', 'Cancelled'])),
                 Filter::make('today')->query(fn (Builder $q) => $q->whereDate('scheduled_at', today())),
                 Filter::make('upcoming')->query(fn (Builder $q) => $q->where('status', 'Pending')->where('scheduled_at', '>=', now())),
                 Filter::make('overdue')->query(fn (Builder $q) => $q->where('status', 'Pending')->where('scheduled_at', '<', now())),
-            ])->recordActions([EditAction::make()->visible(fn (FollowUp $r) => $r->status === 'Pending'), Action::make('complete')->requiresConfirmation()->visible(fn (FollowUp $r) => $r->status === 'Pending')->action(fn (FollowUp $r) => app(FollowUpService::class)->complete(auth()->user(), $r))]);
+            ])->recordActions([RecordCallAction::make(), AssessmentFollowUpAction::make(), EditAction::make()->visible(fn (FollowUp $r) => $r->status === 'Pending'), Action::make('complete')->requiresConfirmation()->visible(fn (FollowUp $r) => $r->status === 'Pending')->action(fn (FollowUp $r) => app(FollowUpService::class)->complete(auth()->user(), $r))]);
     }
 
     public static function getPages(): array

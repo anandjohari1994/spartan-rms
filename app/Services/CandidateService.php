@@ -20,11 +20,14 @@ class CandidateService
 
     private function validated(array $data, ?Candidate $candidate = null): array
     {
+        if (! $candidate) {
+            $data = ['entry_date' => today()->toDateString(), 'experience_type' => 'Unknown', 'calling_status' => 'Not Called', 'interest_status' => 'Unknown', ...$data];
+        }
         $v = Validator::make($data, [
             'entry_date' => 'required|date|before_or_equal:today', 'full_name' => 'required|string|max:255', 'mobile' => 'required|string|max:30',
-            'email' => 'nullable|email|max:255', 'qualification' => 'required|string|max:255', 'passout_year' => 'required|integer|min:1960|max:'.(now()->year + 5),
-            'location' => 'required|string|max:120', 'job_position_id' => ['required', Rule::exists('job_positions', 'id')->where(fn ($q) => $q->where('is_active', true)->orWhere('id', $candidate?->job_position_id))],
-            'experience_type' => ['required', Rule::in(['Fresher', 'Experienced'])], 'current_ctc' => 'nullable|numeric|min:0|max:9999999999.99', 'expected_ctc' => 'nullable|numeric|min:0|max:9999999999.99',
+            'email' => 'nullable|email|max:255', 'qualification' => 'nullable|string|max:255', 'passout_year' => 'nullable|integer|min:1960|max:'.(now()->year + 5),
+            'location' => 'nullable|string|max:120', 'job_position_id' => ['required', Rule::exists('job_positions', 'id')->where(fn ($q) => $q->where('is_active', true)->orWhere('id', $candidate?->job_position_id))],
+            'experience_type' => ['required', Rule::in(['Unknown', 'Fresher', 'Experienced'])], 'current_ctc' => 'nullable|numeric|min:0|max:9999999999.99', 'expected_ctc' => 'nullable|numeric|min:0|max:9999999999.99',
             'calling_status' => ['required', Rule::in(Recruitment::CALLS)], 'interest_status' => ['required', Rule::in(['Unknown', 'Interested', 'Not Interested'])],
             'pan_verification_status' => ['nullable', Rule::in(['Not Verified', 'Verified', 'Failed'])], 'remarks' => 'nullable|string|max:10000',
         ])->validate();

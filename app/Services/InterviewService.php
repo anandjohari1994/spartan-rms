@@ -54,6 +54,11 @@ class InterviewService
             $reason = $v['override_reason'] ?? null;
             unset($v['override_reason']);
             $r->forceFill([...$v, 'updated_by' => $actor->id])->save();
+            if ($r->round_number === 1 && in_array($r->status, ['Passed', 'Failed', 'Cancelled'])) {
+                foreach ($c->followUps()->where('status', 'Pending')->whereIn('purpose', ['Assessment completion', 'Assessment support', 'Assessment result'])->get() as $task) {
+                    app(FollowUpService::class)->save($actor, [...$task->getAttributes(), 'status' => $task->purpose === 'Assessment result' && $r->status !== 'Cancelled' ? 'Completed' : 'Cancelled'], $task);
+                }
+            }
             app(AuditService::class)->record($actor, $r, 'interview.updated', $old, [...$r->getAttributes(), 'override_reason' => $reason]);
 
             return $r;

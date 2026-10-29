@@ -31,6 +31,16 @@ class Candidate extends Model
         return $this->belongsTo(JobPosition::class);
     }
 
+    public function nextFollowUp()
+    {
+        return $this->hasOne(FollowUp::class)->ofMany(['scheduled_at' => 'min', 'id' => 'min'], fn ($query) => $query->where('status', 'Pending'));
+    }
+
+    public function latestCall()
+    {
+        return $this->hasOne(CallLog::class)->ofMany(['called_at' => 'max', 'id' => 'max']);
+    }
+
     public function assignedHr()
     {
         return $this->belongsTo(User::class, 'assigned_hr_id');

@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\CandidateResource\Pages;
 
 use App\Filament\Resources\CandidateResource;
+use App\Filament\Support\AssessmentFollowUpAction;
+use App\Filament\Support\RecordCallAction;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -12,6 +14,6 @@ class ViewCandidate extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        return [EditAction::make()];
+        return [RecordCallAction::make(), EditAction::make(), AssessmentFollowUpAction::make()];
     }
 }
