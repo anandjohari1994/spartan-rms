@@ -8,6 +8,7 @@ use App\Models\CallLog;
 use App\Models\Candidate;
 use App\Models\CandidateAssignment;
 use App\Models\CandidateDocument;
+use App\Models\EmailTemplate;
 use App\Models\FollowUp;
 use App\Models\InterviewRound;
 use App\Models\JobPosition;
@@ -45,6 +46,7 @@ class AppServiceProvider extends ServiceProvider
             Notification::make()->title('Please check the submitted information')->body(implode(' ', $exception->validator->errors()->all()))->danger()->send();
         };
         Gate::policy(Candidate::class, CandidatePolicy::class);
+        Gate::policy(EmailTemplate::class, AdminPolicy::class);
         foreach ([InterviewRound::class, CallLog::class, FollowUp::class, CandidateDocument::class, CandidateAssignment::class] as $model) {
             Gate::policy($model, CandidateRecordPolicy::class);
         }

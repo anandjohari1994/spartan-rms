@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Support\ActionFeedback;
 use App\Filament\Support\AssessmentFollowUpAction;
+use App\Filament\Support\EmailComposer;
 use App\Filament\Support\Fields;
 use App\Filament\Support\RecordCallAction;
 use App\Models\Candidate;
@@ -27,7 +28,9 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\Indicator;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -106,7 +109,7 @@ class CandidateResource extends Resource
     public static function table(Table $table): Table
     {
         $columns = [
-            TextColumn::make('candidate_code')->searchable()->sortable()->toggleable(isToggledHiddenByDefault: true), TextColumn::make('entry_date')->date()->sortable()->toggleable(isToggledHiddenByDefault: true),
+            TextColumn::make('candidate_code')->searchable()->sortable()->toggleable(isToggledHiddenByDefault: true), TextColumn::make('entry_date')->label('Entry date')->date()->sortable()->toggleable(),
             TextColumn::make('full_name')->searchable()->sortable(), TextColumn::make('mobile_normalized')->label('Mobile')->searchable(),
             TextColumn::make('qualification')->toggleable(isToggledHiddenByDefault: true), TextColumn::make('passout_year')->sortable()->toggleable(isToggledHiddenByDefault: true),
             TextColumn::make('location')->searchable()->sortable()->toggleable(isToggledHiddenByDefault: true), TextColumn::make('jobPosition.name')->label('Position')->sortable(),
@@ -114,17 +117,28 @@ class CandidateResource extends Resource
             TextColumn::make('calling_status')->badge(),
             TextColumn::make('latestCall.called_at')->label('Last call')->dateTime()->placeholder('Not called'),
             TextColumn::make('interest_status')->label('Interest')->badge(),
+            TextColumn::make('last_email_sent_at')->label('Last email sent')->dateTime()->sortable()->placeholder('Not sent')->toggleable()
+                ->tooltip('Accepted by the mail provider; inbox delivery is not confirmed.'),
+            TextColumn::make('round_one_email_sent_at')->label('Round 1 email sent')->dateTime()->sortable()->placeholder('Not sent')->toggleable(),
+            TextColumn::make('round_one_scheduled_at')->label('Round 1 scheduled at')->state(fn (Candidate $r) => $r->interviewRounds->firstWhere('round_number', 1)?->scheduled_at)->dateTime()->placeholder('Not scheduled')->toggleable(),
             TextColumn::make('nextFollowUp.notes')->label('Next action')->limit(45)->placeholder('No pending task'),
             TextColumn::make('nextFollowUp.scheduled_at')->label('Due')->dateTime()->placeholder('-'),
             TextColumn::make('assessment_progress')->label('Assessment completion')->badge()->toggleable(isToggledHiddenByDefault: true),
             TextColumn::make('assessment_reported_completed_at')->label('Completion reported')->dateTime()->toggleable(isToggledHiddenByDefault: true),
         ];
         foreach ([1, 2, 3] as $round) {
-            $columns[] = TextColumn::make('round_'.$round)->label('Round '.$round)->state(fn (Candidate $r) => $r->interviewRounds->firstWhere('round_number', $round)?->status)->badge()->toggleable(isToggledHiddenByDefault: true);
+            $columns[] = TextColumn::make('round_'.$round)->label('Round '.$round)->state(fn (Candidate $r) => $r->interviewRounds->firstWhere('round_number', $round)?->status)->badge()->toggleable(isToggledHiddenByDefault: $round !== 1);
         }
 
         return $table->columns([...$columns, TextColumn::make('recruitment_status')->badge(), TextColumn::make('assignedHr.name')->label('Assigned HR')->visible(fn () => auth()->user()->isAdmin()), TextColumn::make('updated_at')->since()->sortable()])
-            ->defaultSort('created_at', 'desc')->filters([
+            ->defaultSort('created_at', 'desc')->deferFilters(false)->filters([
+                TernaryFilter::make('round_one_email_sent')->label('Round 1 email')
+                    ->placeholder('All candidates')->trueLabel('Sent')->falseLabel('Not sent')
+                    ->queries(
+                        true: fn (Builder $query) => $query->whereNotNull('round_one_email_sent_at'),
+                        false: fn (Builder $query) => $query->whereNull('round_one_email_sent_at'),
+                        blank: fn (Builder $query) => $query,
+                    ),
                 SelectFilter::make('job_position_id')->relationship('jobPosition', 'name')->label('Position'),
                 SelectFilter::make('recruitment_status')->options(Recruitment::options(Recruitment::STATUSES)),
                 SelectFilter::make('calling_status')->options(Recruitment::options(Recruitment::CALLS)),
@@ -133,21 +147,41 @@ class CandidateResource extends Resource
                 Filter::make('assessment_awaiting_result')->label('Completed - awaiting result')->query(fn (Builder $query) => $query->where('assessment_progress', 'Reported completed')->whereNotIn('recruitment_status', ['Rejected', 'Withdrawn'])->whereHas('interviewRounds', fn (Builder $r) => $r->where('round_number', 1)->whereIn('status', ['Pending', 'Scheduled', 'On Hold']))),
                 Filter::make('assessment_overdue')->label('Overdue assessment follow-ups')->query(fn (Builder $query) => $query->whereHas('followUps', fn (Builder $f) => $f->where('status', 'Pending')->where('scheduled_at', '<', now())->whereIn('purpose', ['Assessment completion', 'Assessment support', 'Assessment result']))),
                 SelectFilter::make('assigned_hr_id')->label('HR')->options(fn () => User::role('HR Executive')->pluck('name', 'id'))->visible(fn () => auth()->user()->isAdmin()),
-                Filter::make('location')->schema([TextInput::make('location')])->query(fn (Builder $q, array $data) => $q->when($data['location'] ?? null, fn ($q, $v) => $q->where('location', 'like', '%'.$v.'%'))),
-                Filter::make('entry_date')->schema([DatePicker::make('from'), DatePicker::make('until')])->query(fn (Builder $q, array $data) => $q->when($data['from'] ?? null, fn ($q, $v) => $q->whereDate('entry_date', '>=', $v))->when($data['until'] ?? null, fn ($q, $v) => $q->whereDate('entry_date', '<=', $v))),
+                Filter::make('location')->schema([TextInput::make('location')])->query(fn (Builder $query, array $data) => $query->when($data['location'] ?? null, fn ($q, $v) => $q->where('location', 'like', '%'.$v.'%'))),
+                Filter::make('entry_date')->label('Candidate entry date')->schema([
+                    DatePicker::make('from')->label('Entry date from'),
+                    DatePicker::make('until')->label('Entry date to')->helperText('Both dates are included. Use the same date for a single day.'),
+                ])->query(fn (Builder $query, array $data) => $query
+                    ->when($data['from'] ?? null, fn ($q, $v) => $q->whereDate('entry_date', '>=', $v))
+                    ->when($data['until'] ?? null, fn ($q, $v) => $q->whereDate('entry_date', '<=', $v)))
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if (filled($data['from'] ?? null)) {
+                            $indicators[] = Indicator::make('Entry date from: '.$data['from'])->removeField('from');
+                        }
+                        if (filled($data['until'] ?? null)) {
+                            $indicators[] = Indicator::make('Entry date to: '.$data['until'])->removeField('until');
+                        }
+
+                        return $indicators;
+                    }),
                 TrashedFilter::make()->visible(fn () => auth()->user()->isAdmin()),
             ])->toolbarActions([
                 BulkAction::make('emailCandidates')->label('Email selected (BCC)')
-                    ->visible(fn () => auth()->user()?->isAdmin())
+                    ->visible(fn () => auth()->user()?->canEmailCandidates())
                     ->databaseTransaction(false)
                     ->modalHeading('Send one email to selected candidates')
-                    ->modalDescription('Maximum 100 candidates. Every candidate is in BCC; To and Cc stay empty. Duplicate email addresses receive one copy. Review the shared message before sending. Sending does not schedule or pass an interview.')
+                    ->modalDescription('Maximum 100 candidates. Every candidate is in BCC; To and Cc stay empty. Duplicate email addresses receive one copy. Sending a Round 1 invitation template schedules Round 1 at the current date and time once the mail provider accepts the email. Review the shared message before sending.')
                     ->modalSubmitActionLabel('Send email')
                     ->schema([
                         Hidden::make('token')->default(fn () => (string) Str::uuid()),
-                        TextInput::make('subject')->required()->maxLength(200)->default('Round 1 online assessment invitation'),
-                        Textarea::make('body')->label('Message')->required()->maxLength(20000)->rows(12)
+                        EmailComposer::picker(),
+                        EmailComposer::details(),
+                        Select::make('body_format')->label('Message format')->options(['plain' => 'Plain text', 'markdown' => 'Formatted (Markdown)'])->default('plain')->required()->live(),
+                        TextInput::make('subject')->required()->maxLength(200)->default('Round 1 online assessment invitation')->live(onBlur: true),
+                        Textarea::make('body')->label('Message')->required()->maxLength(20000)->rows(12)->live(onBlur: true)
                             ->helperText('Include the assessment URL, date, time zone, deadline, duration and contact details. This exact text goes to everyone; use a shared link, not individual credentials.'),
+                        EmailComposer::preview(),
                     ])
                     ->action(fn (Collection $records, array $data, Schema $schema) => ActionFeedback::run($schema, function () use ($records, $data) {
                         $count = app(CandidateOutreachService::class)->email(auth()->user(), $records->modelKeys(), $data);

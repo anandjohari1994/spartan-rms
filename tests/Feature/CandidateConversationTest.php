@@ -49,6 +49,34 @@ class CandidateConversationTest extends TestCase
         return [...['token' => (string) Str::uuid(), 'called_at' => now()->toDateTimeString(), 'call_status' => 'Connected', 'interest_status' => 'Interested', 'notes' => 'Discussed role', 'next_action' => 'Call again', 'next_at' => now()->addDay()->toDateTimeString()], ...$extra];
     }
 
+    public function test_candidate_entry_date_filter_supports_inclusive_and_open_ranges_and_reset(): void
+    {
+        $early = app(CandidateService::class)->create($this->hr, [...$this->profile(), 'mobile' => '9876543211', 'entry_date' => today()->subDays(2)->toDateString()]);
+        $middle = app(CandidateService::class)->create($this->hr, [...$this->profile(), 'mobile' => '9876543212', 'entry_date' => today()->subDay()->toDateString()]);
+        $page = Livewire::test(ListCandidates::class);
+        $page->filterTable('entry_date', ['from' => $early->entry_date->toDateString(), 'until' => $middle->entry_date->toDateString()])
+            ->assertCanSeeTableRecords([$early, $middle])->assertCanNotSeeTableRecords([$this->candidate]);
+        $page->filterTable('entry_date', ['from' => today()->toDateString(), 'until' => today()->toDateString()])
+            ->assertCanSeeTableRecords([$this->candidate])->assertCanNotSeeTableRecords([$early, $middle]);
+        $page->filterTable('entry_date', ['from' => $middle->entry_date->toDateString(), 'until' => null])
+            ->assertCanSeeTableRecords([$middle, $this->candidate])->assertCanNotSeeTableRecords([$early]);
+        $page->filterTable('entry_date', ['from' => null, 'until' => $early->entry_date->toDateString()])
+            ->assertCanSeeTableRecords([$early])->assertCanNotSeeTableRecords([$middle, $this->candidate]);
+        $page->resetTableFilters()->assertCanSeeTableRecords([$early, $middle, $this->candidate]);
+    }
+
+    public function test_date_and_location_filters_combine_with_daily_tab_and_ownership(): void
+    {
+        $this->candidate->update(['location' => 'Pune', 'interest_status' => 'Interested']);
+        $other = User::factory()->create(['is_active' => true]);
+        $other->assignRole('HR Executive');
+        $hidden = app(CandidateService::class)->create($other, [...$this->profile(), 'mobile' => '9876543211', 'location' => 'Pune', 'interest_status' => 'Interested']);
+        Livewire::test(ListCandidates::class)->set('activeTab', 'interested')
+            ->filterTable('entry_date', ['from' => today()->toDateString(), 'until' => today()->toDateString()])
+            ->filterTable('location', ['location' => 'Pune'])->assertCanSeeTableRecords([$this->candidate])->assertCanNotSeeTableRecords([$hidden])
+            ->filterTable('location', ['location' => 'Mumbai'])->assertCanNotSeeTableRecords([$this->candidate, $hidden]);
+    }
+
     public function test_minimal_profile_defaults_and_later_completion(): void
     {
         $this->assertNull($this->candidate->qualification);

@@ -20,6 +20,14 @@ class User extends Authenticatable implements FilamentUser
         return $this->is_active && $this->hasRole('Super Admin');
     }
 
+    public function canEmailCandidates(): bool
+    {
+        return $this->is_active
+            && $this->hasAnyRole(['Super Admin', 'HR Executive'])
+            && $this->can('candidates.view')
+            && $this->can('candidates.update');
+    }
+
     public function canAccessPanel(Panel $panel): bool
     {
         return $this->is_active && $this->hasAnyRole(['Super Admin', 'HR Executive']);

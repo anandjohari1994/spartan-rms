@@ -107,6 +107,8 @@ Do not symlink `storage/app/rms-private` into `public_html`. A public storage li
 
 ## 9. Public directory configuration
 
+For the existing `rms.apjsoftwares.in` deployment confirmed working by the owner on 22 October 2026, see [the current subdomain runbook](DEPLOYMENT_RMS_SUBDOMAIN.md). It records the account's current root-to-public rewrite arrangement. The layouts below are the preferred arrangements for new deployments.
+
 Only `public/` may be the document root. Laravel explicitly warns against exposing the application root. [Laravel 12 deployment](https://laravel.com/docs/12.x/deployment).
 
 Preferred: point the domain's document root to `/home/u123/domains/example.com/rms/public`, if your plan permits it.

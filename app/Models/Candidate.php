@@ -10,11 +10,11 @@ class Candidate extends Model
 {
     use SoftDeletes;
 
-    protected $guarded = ['id', 'candidate_code', 'mobile_normalized', 'assigned_hr_id', 'created_by', 'updated_by'];
+    protected $guarded = ['id', 'candidate_code', 'mobile_normalized', 'assigned_hr_id', 'created_by', 'updated_by', 'last_email_sent_at', 'round_one_email_sent_at'];
 
     protected function casts(): array
     {
-        return ['entry_date' => 'date', 'current_ctc' => 'decimal:2', 'expected_ctc' => 'decimal:2'];
+        return ['entry_date' => 'date', 'current_ctc' => 'decimal:2', 'expected_ctc' => 'decimal:2', 'last_email_sent_at' => 'datetime', 'round_one_email_sent_at' => 'datetime'];
     }
 
     public function scopeVisibleTo(Builder $query, ?User $user): Builder
