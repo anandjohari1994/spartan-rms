@@ -1,0 +1,1104 @@
+[
+  {
+    "width": 595.303937007874,
+    "height": 841.889763779528,
+    "entries": [
+      {
+        "x": 72.1,
+        "right": 523.9,
+        "top": 112.314763779528,
+        "bottom": 122.814763779528,
+        "baseline": 120.00076377952803,
+        "size": 10.5,
+        "align": "left",
+        "runs": [
+          {
+            "text": "Ref. No.: ",
+            "bold": false
+          },
+          {
+            "key": "reference",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 72.1,
+        "right": 523.9,
+        "top": 125.11476377952795,
+        "bottom": 135.61476377952795,
+        "baseline": 132.80076377952798,
+        "size": 10.5,
+        "align": "left",
+        "runs": [
+          {
+            "text": "Address: ",
+            "bold": false
+          },
+          {
+            "key": "address_line_1",
+            "bold": false
+          },
+          {
+            "text": ",",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 72.1,
+        "right": 523.9,
+        "top": 137.91476377952802,
+        "bottom": 148.41476377952802,
+        "baseline": 145.60076377952805,
+        "size": 10.5,
+        "align": "left",
+        "runs": [
+          {
+            "key": "address_line_2",
+            "bold": false
+          },
+          {
+            "text": ",",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 72.1,
+        "right": 523.9,
+        "top": 150.71476377952797,
+        "bottom": 161.21476377952797,
+        "baseline": 158.400763779528,
+        "size": 10.5,
+        "align": "left",
+        "runs": [
+          {
+            "key": "state",
+            "bold": false
+          },
+          {
+            "text": " - ",
+            "bold": false
+          },
+          {
+            "key": "pin_code",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 424.4,
+        "right": 523.9,
+        "top": 163.51476377952804,
+        "bottom": 174.01476377952804,
+        "baseline": 171.20076377952807,
+        "size": 10.5,
+        "align": "right",
+        "runs": [
+          {
+            "text": "Date: ",
+            "bold": false
+          },
+          {
+            "key": "letter_date",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 72.1,
+        "right": 523.9,
+        "top": 216.11476377952795,
+        "bottom": 226.61476377952795,
+        "baseline": 223.80076377952798,
+        "size": 10.5,
+        "align": "left",
+        "runs": [
+          {
+            "text": "Dear ",
+            "bold": false
+          },
+          {
+            "key": "candidate_name",
+            "bold": true
+          },
+          {
+            "text": ",",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 72.1,
+        "right": 523.9,
+        "top": 250.41476377952802,
+        "bottom": 260.914763779528,
+        "baseline": 258.10076377952805,
+        "size": 10.5,
+        "align": "left",
+        "runs": [
+          {
+            "text": "Ltd. (\"the Company\"). We are pleased to offer you the position of ",
+            "bold": false
+          },
+          {
+            "key": "designation",
+            "bold": true
+          },
+          {
+            "text": " in the ",
+            "bold": false
+          },
+          {
+            "key": "department",
+            "bold": true
+          }
+        ]
+      },
+      {
+        "x": 237.05,
+        "right": 523.9,
+        "top": 432.4147637795281,
+        "bottom": 442.9147637795281,
+        "baseline": 440.10076377952805,
+        "size": 10.5,
+        "runs": [
+          {
+            "key": "designation",
+            "bold": false
+          },
+          {
+            "text": "",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 237.05,
+        "right": 523.9,
+        "top": 450.2147637795281,
+        "bottom": 460.7147637795281,
+        "baseline": 457.90076377952806,
+        "size": 10.5,
+        "runs": [
+          {
+            "key": "department",
+            "bold": false
+          },
+          {
+            "text": "",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 237.05,
+        "right": 523.9,
+        "top": 468.01476377952804,
+        "bottom": 478.51476377952804,
+        "baseline": 475.700763779528,
+        "size": 10.5,
+        "runs": [
+          {
+            "key": "work_location",
+            "bold": false
+          },
+          {
+            "text": "",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 237.05,
+        "right": 523.9,
+        "top": 485.81476377952805,
+        "bottom": 496.31476377952805,
+        "baseline": 493.50076377952803,
+        "size": 10.5,
+        "runs": [
+          {
+            "key": "reporting_manager",
+            "bold": false
+          },
+          {
+            "text": "",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 237.05,
+        "right": 523.9,
+        "top": 503.61476377952806,
+        "bottom": 514.1147637795281,
+        "baseline": 511.30076377952804,
+        "size": 10.5,
+        "runs": [
+          {
+            "key": "employment_type",
+            "bold": false
+          },
+          {
+            "text": "",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 237.05,
+        "right": 523.9,
+        "top": 564.3647637795281,
+        "bottom": 574.8647637795281,
+        "baseline": 572.0507637795281,
+        "size": 10.5,
+        "runs": [
+          {
+            "key": "joining_date",
+            "bold": false
+          },
+          {
+            "text": "",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 237.05,
+        "right": 523.9,
+        "top": 582.1647637795281,
+        "bottom": 592.664763779528,
+        "baseline": 589.850763779528,
+        "size": 10.499999999999972,
+        "runs": [
+          {
+            "key": "commencement_date",
+            "bold": false
+          },
+          {
+            "text": "",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 237.05,
+        "right": 523.9,
+        "top": 599.9647637795281,
+        "bottom": 610.4647637795281,
+        "baseline": 607.650763779528,
+        "size": 10.5,
+        "runs": [
+          {
+            "key": "probation_months",
+            "bold": false
+          },
+          {
+            "text": " months from the Employment Commencement Date",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 72.1,
+        "right": 523.9,
+        "top": 646.9647637795281,
+        "bottom": 657.4647637795281,
+        "baseline": 654.650763779528,
+        "size": 10.5,
+        "align": "left",
+        "runs": [
+          {
+            "text": "final client interview. Please submit the following on or before ",
+            "bold": false
+          },
+          {
+            "key": "document_deadline",
+            "bold": true
+          },
+          {
+            "text": ":",
+            "bold": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "width": 595.303937007874,
+    "height": 841.889763779528,
+    "entries": [
+      {
+        "x": 72.1,
+        "right": 523.9,
+        "top": 162.76476377952804,
+        "bottom": 173.26476377952804,
+        "baseline": 170.45076377952807,
+        "size": 10.5,
+        "align": "left",
+        "runs": [
+          {
+            "text": "4.1 Your annual Cost to Company (CTC) will be INR ",
+            "bold": false
+          },
+          {
+            "key": "annual_ctc",
+            "bold": true
+          },
+          {
+            "text": " per annum, and your monthly gross salary",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 72.1,
+        "right": 523.9,
+        "top": 177.16476377952802,
+        "bottom": 187.66476377952802,
+        "baseline": 184.85076377952805,
+        "size": 10.5,
+        "align": "left",
+        "runs": [
+          {
+            "text": "will be INR ",
+            "bold": false
+          },
+          {
+            "key": "monthly_gross",
+            "bold": true
+          },
+          {
+            "text": ", subject to applicable statutory deductions. A detailed compensation",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 72.1,
+        "right": 523.9,
+        "top": 211.46476377952797,
+        "bottom": 221.96476377952797,
+        "baseline": 219.150763779528,
+        "size": 10.5,
+        "align": "left",
+        "runs": [
+          {
+            "text": "4.2 Salary shall be paid monthly in arrears through bank transfer on or before ",
+            "bold": false
+          },
+          {
+            "key": "salary_payment_day",
+            "bold": true
+          },
+          {
+            "text": " of the",
+            "bold": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "width": 595.303937007874,
+    "height": 841.889763779528,
+    "entries": [
+      {
+        "x": 72.1,
+        "right": 523.9,
+        "top": 573.6147637795281,
+        "bottom": 584.1147637795281,
+        "baseline": 581.3007637795281,
+        "size": 10.5,
+        "align": "left",
+        "runs": [
+          {
+            "text": "8.1 This conditional offer is valid until ",
+            "bold": false
+          },
+          {
+            "key": "valid_until",
+            "bold": true
+          },
+          {
+            "text": ". Kindly confirm your acceptance by signing and",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 72.1,
+        "right": 523.9,
+        "top": 588.014763779528,
+        "bottom": 598.514763779528,
+        "baseline": 595.7007637795281,
+        "size": 10.5,
+        "align": "left",
+        "runs": [
+          {
+            "text": "returning a copy of this letter on or before ",
+            "bold": false
+          },
+          {
+            "key": "acceptance_deadline",
+            "bold": true
+          },
+          {
+            "text": ".",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 72.1,
+        "right": 523.9,
+        "top": 715.564763779528,
+        "bottom": 726.064763779528,
+        "baseline": 723.250763779528,
+        "size": 10.5,
+        "align": "left",
+        "runs": [
+          {
+            "text": "I, ",
+            "bold": false
+          },
+          {
+            "key": "candidate_name",
+            "bold": true
+          },
+          {
+            "text": ", confirm that I have read and understood this letter and that:",
+            "bold": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "width": 595.303937007874,
+    "height": 841.889763779528,
+    "entries": [
+      {
+        "x": 77.5,
+        "right": 290,
+        "top": 384.83076377952807,
+        "bottom": 394.83076377952807,
+        "baseline": 392.15076377952806,
+        "size": 10,
+        "runs": [
+          {
+            "key": "signatory_name",
+            "bold": true
+          }
+        ]
+      },
+      {
+        "x": 303.15,
+        "right": 523.4,
+        "top": 384.83076377952807,
+        "bottom": 394.83076377952807,
+        "baseline": 392.15076377952806,
+        "size": 10,
+        "runs": [
+          {
+            "key": "candidate_name",
+            "bold": true
+          }
+        ]
+      },
+      {
+        "x": 77.5,
+        "right": 290,
+        "top": 397.03076377952806,
+        "bottom": 407.03076377952806,
+        "baseline": 404.35076377952805,
+        "size": 10.0,
+        "align": "left",
+        "runs": [
+          {
+            "key": "signatory_designation",
+            "bold": false
+          },
+          {
+            "text": ", HR Department",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 77.5,
+        "right": 290,
+        "top": 409.23076377952805,
+        "bottom": 419.23076377952805,
+        "baseline": 416.55076377952804,
+        "size": 10.0,
+        "align": "left",
+        "runs": [
+          {
+            "text": "Date: ",
+            "bold": false
+          },
+          {
+            "key": "signature_date",
+            "bold": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "width": 595.303937007874,
+    "height": 841.889763779528,
+    "entries": [
+      {
+        "x": 72.1,
+        "right": 523.9,
+        "top": 127.064763779528,
+        "bottom": 137.564763779528,
+        "baseline": 134.75076377952803,
+        "size": 10.5,
+        "align": "left",
+        "runs": [
+          {
+            "text": "Compensation structure referred to in Clause 4 (Compensation) above, for the position of ",
+            "bold": false
+          },
+          {
+            "key": "designation",
+            "bold": true
+          },
+          {
+            "text": ".",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 302.44,
+        "right": 402.44,
+        "top": 186.48076377952793,
+        "bottom": 196.48076377952793,
+        "baseline": 193.80076377952798,
+        "size": 10.0,
+        "align": "right",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "runs": [
+          {
+            "key": "basic_monthly",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 418.1399999999999,
+        "right": 518.1399999999999,
+        "top": 186.48076377952793,
+        "bottom": 196.48076377952793,
+        "baseline": 193.80076377952798,
+        "size": 10.0,
+        "align": "right",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "runs": [
+          {
+            "key": "basic_annual",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 302.44,
+        "right": 402.44,
+        "top": 208.18076377952798,
+        "bottom": 218.18076377952798,
+        "baseline": 215.50076377952803,
+        "size": 10.0,
+        "align": "right",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "runs": [
+          {
+            "key": "hra_monthly",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 418.1399999999999,
+        "right": 518.1399999999999,
+        "top": 208.18076377952798,
+        "bottom": 218.18076377952798,
+        "baseline": 215.50076377952803,
+        "size": 10.0,
+        "align": "right",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "runs": [
+          {
+            "key": "hra_annual",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 302.44,
+        "right": 402.44,
+        "top": 229.88076377952802,
+        "bottom": 239.88076377952802,
+        "baseline": 237.20076377952807,
+        "size": 10.0,
+        "align": "right",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "runs": [
+          {
+            "key": "lta_monthly",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 418.1399999999999,
+        "right": 518.1399999999999,
+        "top": 229.88076377952802,
+        "bottom": 239.88076377952802,
+        "baseline": 237.20076377952807,
+        "size": 10.0,
+        "align": "right",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "runs": [
+          {
+            "key": "lta_annual",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 302.44,
+        "right": 402.44,
+        "top": 251.58076377952796,
+        "bottom": 261.58076377952796,
+        "baseline": 258.900763779528,
+        "size": 10.0,
+        "align": "right",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "runs": [
+          {
+            "key": "medical_monthly",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 418.1399999999999,
+        "right": 518.1399999999999,
+        "top": 251.58076377952796,
+        "bottom": 261.58076377952796,
+        "baseline": 258.900763779528,
+        "size": 10.0,
+        "align": "right",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "runs": [
+          {
+            "key": "medical_annual",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 302.44,
+        "right": 402.44,
+        "top": 273.280763779528,
+        "bottom": 283.280763779528,
+        "baseline": 280.60076377952805,
+        "size": 10.0,
+        "align": "right",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "runs": [
+          {
+            "key": "conveyance_monthly",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 418.1399999999999,
+        "right": 518.1399999999999,
+        "top": 273.280763779528,
+        "bottom": 283.280763779528,
+        "baseline": 280.60076377952805,
+        "size": 10.0,
+        "align": "right",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "runs": [
+          {
+            "key": "conveyance_annual",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 302.44,
+        "right": 402.44,
+        "top": 294.98076377952793,
+        "bottom": 304.98076377952793,
+        "baseline": 302.300763779528,
+        "size": 10.0,
+        "align": "right",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "runs": [
+          {
+            "key": "special_monthly",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 418.1399999999999,
+        "right": 518.1399999999999,
+        "top": 294.98076377952793,
+        "bottom": 304.98076377952793,
+        "baseline": 302.300763779528,
+        "size": 10.0,
+        "align": "right",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "runs": [
+          {
+            "key": "special_annual",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 77.85,
+        "right": 285,
+        "top": 316.680763779528,
+        "bottom": 326.680763779528,
+        "baseline": 324.00076377952803,
+        "size": 10.0,
+        "align": "left",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "runs": [
+          {
+            "key": "other_label",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 302.44,
+        "right": 402.44,
+        "top": 316.680763779528,
+        "bottom": 326.680763779528,
+        "baseline": 324.00076377952803,
+        "size": 10.0,
+        "align": "right",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "runs": [
+          {
+            "key": "other_monthly",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 418.1399999999999,
+        "right": 518.1399999999999,
+        "top": 316.680763779528,
+        "bottom": 326.680763779528,
+        "baseline": 324.00076377952803,
+        "size": 10.0,
+        "align": "right",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "runs": [
+          {
+            "key": "other_annual",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 302.44,
+        "right": 402.44,
+        "top": 338.380763779528,
+        "bottom": 348.380763779528,
+        "baseline": 345.700763779528,
+        "size": 10.0,
+        "align": "right",
+        "background": [
+          231,
+          238,
+          247
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "runs": [
+          {
+            "key": "gross_monthly",
+            "bold": true
+          }
+        ]
+      },
+      {
+        "x": 418.14,
+        "right": 518.14,
+        "top": 338.380763779528,
+        "bottom": 348.380763779528,
+        "baseline": 345.700763779528,
+        "size": 10.0,
+        "align": "right",
+        "background": [
+          231,
+          238,
+          247
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "runs": [
+          {
+            "key": "gross_annual",
+            "bold": true
+          }
+        ]
+      },
+      {
+        "x": 302.44,
+        "right": 402.44,
+        "top": 360.08076377952807,
+        "bottom": 370.08076377952807,
+        "baseline": 367.40076377952806,
+        "size": 10.0,
+        "align": "right",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "runs": [
+          {
+            "key": "benefits_monthly",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 418.1399999999999,
+        "right": 518.1399999999999,
+        "top": 360.08076377952807,
+        "bottom": 370.08076377952807,
+        "baseline": 367.40076377952806,
+        "size": 10.0,
+        "align": "right",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "runs": [
+          {
+            "key": "benefits_annual",
+            "bold": false
+          }
+        ]
+      },
+      {
+        "x": 302.44,
+        "right": 402.44,
+        "top": 393.98076377952805,
+        "bottom": 403.98076377952805,
+        "baseline": 401.30076377952804,
+        "size": 10.0,
+        "align": "right",
+        "background": [
+          33,
+          94,
+          168
+        ],
+        "color": [
+          255,
+          255,
+          255
+        ],
+        "runs": [
+          {
+            "key": "ctc_monthly",
+            "bold": true
+          }
+        ]
+      },
+      {
+        "x": 418.13,
+        "right": 518.13,
+        "top": 393.98076377952805,
+        "bottom": 403.98076377952805,
+        "baseline": 401.30076377952804,
+        "size": 10.0,
+        "align": "right",
+        "background": [
+          33,
+          94,
+          168
+        ],
+        "color": [
+          255,
+          255,
+          255
+        ],
+        "runs": [
+          {
+            "key": "annual_ctc",
+            "bold": true
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -19,6 +19,11 @@ use Throwable;
 
 class CandidateOutreachService
 {
+    public static function defaultToAddress(): string
+    {
+        return trim((string) (config('mail.candidate_to_address') ?: config('mail.from.address')));
+    }
+
     private function selected(User $actor, array $ids): Collection
     {
         Validator::make(['candidates' => $ids], [
@@ -101,6 +106,13 @@ class CandidateOutreachService
             throw ValidationException::withMessages(['body' => 'Nothing sent. Add valid email addresses for: '.$invalid->pluck('candidate_code')->implode(', ')]);
         }
         $recipients = $records->pluck('email')->map(fn ($email) => strtolower(trim($email)))->unique()->values()->all();
+        $to = self::defaultToAddress();
+        if (! filter_var($to, FILTER_VALIDATE_EMAIL)) {
+            throw ValidationException::withMessages(['body' => 'Set a valid company mailbox in MAIL_TO_ADDRESS or MAIL_FROM_ADDRESS before sending.']);
+        }
+        if (in_array(strtolower($to), $recipients, true)) {
+            throw ValidationException::withMessages(['body' => 'The default To address matches a selected candidate. Configure a company mailbox for To so candidate addresses remain in BCC only.']);
+        }
         $mailer = config('mail.default');
         if (! in_array(config("mail.mailers.{$mailer}.transport"), ['smtp', 'sendmail', 'ses', 'ses-v2', 'mailgun', 'postmark', 'resend'], true)) {
             throw ValidationException::withMessages(['body' => 'Configure a delivery mailer such as SMTP first. The current mailer does not send candidate invitations.']);
@@ -125,8 +137,8 @@ class CandidateOutreachService
             throw ValidationException::withMessages(['body' => "Email attempt #{$attempt->id} ({$attempt->updated_at}): {$message}"]);
         }
         try {
-            // No candidate appears in To or Cc. All recipients receive the same message.
-            $sent = Mail::bcc($recipients)->send(new CandidateAssessmentInvitation($values['subject'], $values['body'], $values['body_format'] ?? 'plain'));
+            // Only the company mailbox is in To; candidate addresses remain in BCC.
+            $sent = Mail::to($to)->bcc($recipients)->send(new CandidateAssessmentInvitation($values['subject'], $values['body'], $values['body_format'] ?? 'plain'));
             if ($sent === null) {
                 throw new \RuntimeException('Mail delivery was cancelled.');
             }

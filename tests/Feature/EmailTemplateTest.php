@@ -41,7 +41,7 @@ class EmailTemplateTest extends TestCase
         $this->admin->assignRole('Super Admin');
         $this->actingAs($this->admin);
         $this->transport = new ArrayTransport;
-        config(['mail.default' => 'smtp']);
+        config(['mail.default' => 'smtp', 'mail.from.address' => 'hr@example.test', 'mail.candidate_to_address' => null]);
         Mail::extend('smtp', fn () => $this->transport);
     }
 
@@ -90,7 +90,8 @@ class EmailTemplateTest extends TestCase
         Livewire::test(ListCandidates::class)->callTableBulkAction('emailCandidates', [$candidate], $this->message($template))->assertHasNoErrors();
         $this->assertCount(1, $this->transport->messages());
         $mail = $this->transport->messages()->first()->getOriginalMessage();
-        $this->assertSame([], $mail->getTo());
+        $this->assertCount(1, $mail->getTo());
+        $this->assertSame('hr@example.test', $mail->getTo()[0]->getAddress());
         $this->assertSame([], $mail->getCc());
         $this->assertCount(1, $mail->getBcc());
         $this->assertStringContainsString('https://example.test/exam', $mail->getTextBody());
@@ -154,7 +155,8 @@ class EmailTemplateTest extends TestCase
         Livewire::test(ListCandidates::class)->callTableBulkAction('emailCandidates', [$this->candidate()], $data)->assertHasNoErrors();
         $this->assertCount(1, $this->transport->messages());
         $mail = $this->transport->messages()->first()->getOriginalMessage();
-        $this->assertSame([], $mail->getTo());
+        $this->assertCount(1, $mail->getTo());
+        $this->assertSame('hr@example.test', $mail->getTo()[0]->getAddress());
         $this->assertSame([], $mail->getCc());
         $this->assertCount(1, $mail->getBcc());
         $this->assertStringContainsString('<h2>Job Details</h2>', $mail->getHtmlBody());

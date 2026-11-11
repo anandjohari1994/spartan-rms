@@ -43,7 +43,7 @@ class CandidateOutreachTest extends TestCase
         $this->hr = User::factory()->create(['is_active' => true]);
         $this->hr->assignRole('HR Executive');
         $this->transport = new ArrayTransport;
-        config(['mail.default' => 'smtp']);
+        config(['mail.default' => 'smtp', 'mail.from.address' => 'hr@example.test', 'mail.candidate_to_address' => null]);
         Mail::extend('smtp', fn () => $this->transport);
     }
 
@@ -62,7 +62,7 @@ class CandidateOutreachTest extends TestCase
         return ['token' => (string) Str::uuid(), 'subject' => 'Assessment invitation', 'body' => "Hello,\nPlease attend at 10 AM IST.\nhttps://example.test/exam?a=1&b=2"];
     }
 
-    public function test_one_message_contains_only_bcc_recipients_and_deduplicates_addresses(): void
+    public function test_one_message_uses_company_to_and_deduplicates_candidate_bcc_addresses(): void
     {
         $a = $this->candidate(0);
         $b = $this->candidate(1, 'second@example.test');
@@ -72,7 +72,8 @@ class CandidateOutreachTest extends TestCase
         $this->assertSame(2, $count);
         $this->assertCount(1, $this->transport->messages());
         $mail = $this->transport->messages()->first()->getOriginalMessage();
-        $this->assertSame([], $mail->getTo());
+        $this->assertCount(1, $mail->getTo());
+        $this->assertSame('hr@example.test', $mail->getTo()[0]->getAddress());
         $this->assertSame([], $mail->getCc());
         $this->assertCount(2, $mail->getBcc());
         $this->assertStringContainsString($data['body'], $mail->getTextBody());
@@ -97,6 +98,27 @@ class CandidateOutreachTest extends TestCase
         } catch (ValidationException) {
             $this->assertCount(0, $this->transport->messages());
             $this->assertDatabaseCount('candidate_email_batches', 0);
+        }
+    }
+
+    public function test_configured_company_to_overrides_sender_and_invalid_to_blocks_delivery(): void
+    {
+        $candidate = $this->candidate(0);
+        config(['mail.candidate_to_address' => 'recruitment@example.test']);
+        app(CandidateOutreachService::class)->email($this->admin, [$candidate->id], $this->message());
+        $mail = $this->transport->messages()->first()->getOriginalMessage();
+        $this->assertSame('recruitment@example.test', $mail->getTo()[0]->getAddress());
+        $this->assertSame('candidate@example.test', $mail->getBcc()[0]->getAddress());
+        $this->assertSame([], $mail->getCc());
+        foreach (['not-an-email', "hr@example.test\r\nBcc: other@example.test", 'CANDIDATE@example.test'] as $invalid) {
+            config(['mail.candidate_to_address' => $invalid]);
+            try {
+                app(CandidateOutreachService::class)->email($this->admin, [$candidate->id], $this->message());
+                $this->fail('Invalid or candidate To accepted');
+            } catch (ValidationException) {
+                $this->assertCount(1, $this->transport->messages());
+                $this->assertDatabaseCount('candidate_email_batches', 1);
+            }
         }
     }
 
@@ -171,7 +193,8 @@ class CandidateOutreachTest extends TestCase
         $this->assertCount(1, $this->transport->messages());
         $mail = $this->transport->messages()->first()->getOriginalMessage();
         $this->assertCount(2, $mail->getBcc());
-        $this->assertSame([], $mail->getTo());
+        $this->assertCount(1, $mail->getTo());
+        $this->assertSame('hr@example.test', $mail->getTo()[0]->getAddress());
         $this->assertSame([], $mail->getCc());
         foreach ([$a, $b] as $candidate) {
             $round = $candidate->interviewRounds()->where('round_number', 1)->first();

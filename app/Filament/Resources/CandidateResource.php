@@ -77,7 +77,7 @@ class CandidateResource extends Resource
                 Fields::select('experience_type', ['Unknown', 'Fresher', 'Experienced'])->default('Unknown'),
                 TextInput::make('current_ctc')->label('Current CTC (INR/year)')->numeric()->minValue(0),
                 TextInput::make('expected_ctc')->label('Expected CTC (INR/year)')->numeric()->minValue(0),
-                Fields::select('calling_status', Recruitment::CALLS)->default('Not Called')->helperText('After the first call, the latest call determines this status.'),
+                Fields::select('calling_status', Recruitment::CALLS)->helperText('After the first call, the latest call determines this status.'),
                 Fields::select('interest_status', ['Unknown', 'Interested', 'Not Interested'])->default('Unknown'),
                 Select::make('pan_verification_status')->options(Recruitment::options(['Not Verified', 'Verified', 'Failed'])),
                 Textarea::make('remarks')->maxLength(10000)->columnSpanFull(), Fields::resume()->columnSpanFull(),
@@ -171,7 +171,7 @@ class CandidateResource extends Resource
                     ->visible(fn () => auth()->user()?->canEmailCandidates())
                     ->databaseTransaction(false)
                     ->modalHeading('Send one email to selected candidates')
-                    ->modalDescription('Maximum 100 candidates. Every candidate is in BCC; To and Cc stay empty. Duplicate email addresses receive one copy. Sending a Round 1 invitation template schedules Round 1 at the current date and time once the mail provider accepts the email. Review the shared message before sending.')
+                    ->modalDescription('Maximum 100 candidates. The company mailbox is in To; every candidate is in BCC and Cc stays empty. Duplicate candidate email addresses receive one copy. Sending a Round 1 invitation template schedules Round 1 at the current date and time once the mail provider accepts the email. Review the shared message before sending.')
                     ->modalSubmitActionLabel('Send email')
                     ->schema([
                         Hidden::make('token')->default(fn () => (string) Str::uuid()),

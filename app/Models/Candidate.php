@@ -31,6 +31,21 @@ class Candidate extends Model
         return $this->belongsTo(JobPosition::class);
     }
 
+    public function offerLetter()
+    {
+        return $this->hasOne(OfferLetter::class);
+    }
+
+    public function scopeQualifiedForOffer(Builder $query): Builder
+    {
+        return $query
+            ->whereNotIn('recruitment_status', ['Rejected', 'Withdrawn', 'Joined'])
+            ->where('interest_status', '!=', 'Not Interested')
+            ->whereHas('interviewRounds', fn (Builder $round) => $round->where('round_number', 1)->where('status', 'Passed'))
+            ->whereHas('interviewRounds', fn (Builder $round) => $round->where('round_number', 2)->where('status', 'Passed'))
+            ->whereDoesntHave('interviewRounds', fn (Builder $round) => $round->where('round_number', 3)->whereIn('status', ['Passed', 'Failed', 'Cancelled']));
+    }
+
     public function nextFollowUp()
     {
         return $this->hasOne(FollowUp::class)->ofMany(['scheduled_at' => 'min', 'id' => 'min'], fn ($query) => $query->where('status', 'Pending'));

@@ -3,6 +3,7 @@
 namespace App\Filament\Support;
 
 use App\Models\EmailTemplate;
+use App\Services\CandidateOutreachService;
 use App\Services\EmailTemplateService;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -52,6 +53,7 @@ class EmailComposer
     public static function preview(): Section
     {
         return Section::make('Email preview')->schema([
+            TextEntry::make('preview_to')->label('To (company mailbox)')->state(fn () => CandidateOutreachService::defaultToAddress()),
             TextEntry::make('preview_subject')->label('Subject')->state(fn (Get $get) => self::previewText($get, 'subject')),
             TextEntry::make('preview_body')->label('Message')->state(fn (Get $get) => $get('body_format') === 'markdown' ? EmailTemplateService::safeHtml(self::previewText($get, 'body')) : nl2br(e(self::previewText($get, 'body'))))->html()->prose(),
         ]);

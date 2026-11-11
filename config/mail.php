@@ -115,4 +115,7 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    // Company mailbox shown in To for candidate BCC emails. Defaults to From.
+    'candidate_to_address' => env('MAIL_TO_ADDRESS'),
+
 ];

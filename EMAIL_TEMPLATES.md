@@ -6,7 +6,7 @@
 2. Create or edit a template: name, unique code, round, purpose, subject, message format, body and active status. Choose **Formatted (Markdown)** for headings, bold text, lists and links, or **Plain text** for an unformatted message. Bodies support up to 20,000 characters. Deactivate obsolete templates instead of deleting them. Changes are audited. Re-running seeders preserves existing edits.
 3. In **Candidates**, select one or more candidates and choose **Email selected (BCC)**. Select an active template. Selecting a different template replaces the subject/body in the composer.
 4. Save all details directly in the template body to reuse the complete message without entering separate fields. The shared details section appears only if the subject/body contains placeholders; those are optional for templates that need variable content. Round number and round name come from the selected template.
-5. Review the rendered subject and message preview, edit the message for this send if needed, then send. Editing the composer does not change the saved template. Every candidate receives the same message in BCC; To and Cc remain empty. Selecting one candidate also works.
+5. Review the company To address, rendered subject and message preview, edit the message for this send if needed, then send. Editing the composer does not change the saved template. Every candidate receives the same message in BCC; To contains the configured company mailbox and Cc remains empty. Selecting one candidate also works.
 
 Supported placeholders: `{{company_name}}`, `{{round_number}}`, `{{round_name}}`, `{{session_time}}`, `{{link}}`, `{{deadline}}`, `{{instructions}}`, `{{support_contact}}`, `{{exam_name}}`, `{{exam_key}}`, `{{exam_start_date}}`, `{{exam_end_date}}`.
 
