@@ -71,7 +71,7 @@ class OfferLetterResource extends Resource
                 $text('reference'), $text('address_line_1'), $text('address_line_2'), $text('state'), $text('pin_code'),
             ]),
             Section::make('Position and reporting')->columns(2)->schema([
-                $text('designation'), $text('department'), $text('work_location'), $text('reporting_manager'),
+                $text('designation'), $text('department'), $text('work_location'),
                 Select::make('employment_type')->options(['Full-Time' => 'Full-Time', 'Contractual' => 'Contractual', 'Other' => 'Other'])->required(),
                 TextInput::make('probation_months')->numeric()->integer()->minValue(0)->maxValue(36)->required(),
             ]),
@@ -84,7 +84,7 @@ class OfferLetterResource extends Resource
             ]),
             Section::make('Signatory and optional clause')->columns(2)->schema([
                 $text('signatory_name'), $text('signatory_designation'),
-                Select::make('optional_clause')->label('Optional clause 5.6')->options(['include' => 'Include clause 5.6', 'omit' => 'Omit clause 5.6'])->required()->columnSpanFull()
+                Select::make('optional_clause')->label('Optional clause 4.7')->options(['include' => 'Include clause 4.7', 'omit' => 'Omit clause 4.7'])->required()->columnSpanFull()
                     ->helperText('The reference marks this clause as optional. If included: if the client does not select the candidate, the Company may consider other opportunities or review/end employment under the Employment Agreement and applicable law. The internal HR instruction is removed from issued letters.'),
             ]),
         ];

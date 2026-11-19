@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'default' => env('MAIL_MAILER', 'log'),
+    'default' => 'careers',
 
     /*
     |--------------------------------------------------------------------------
@@ -36,6 +36,52 @@ return [
     */
 
     'mailers' => [
+
+        // MAIL_* is the careers account and the default for all other emails.
+        'careers' => [
+            'transport' => env('MAIL_MAILER', 'log'),
+            'scheme' => env('MAIL_SCHEME'),
+            'host' => env('MAIL_HOST', '127.0.0.1'),
+            'port' => env('MAIL_PORT', 2525),
+            'username' => env('MAIL_USERNAME'),
+            'password' => env('MAIL_PASSWORD'),
+            'timeout' => 30,
+            'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+            'from' => [
+                'address' => env('MAIL_FROM_ADDRESS', 'careers@spartaninfosoft.com'),
+                'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Spartan Infosoft')),
+            ],
+        ],
+
+        'invitation' => [
+            'transport' => env('INVITATION_MAIL_MAILER', 'log'),
+            'scheme' => env('INVITATION_MAIL_SCHEME'),
+            'host' => env('INVITATION_MAIL_HOST', '127.0.0.1'),
+            'port' => env('INVITATION_MAIL_PORT', 2525),
+            'username' => env('INVITATION_MAIL_USERNAME'),
+            'password' => env('INVITATION_MAIL_PASSWORD'),
+            'timeout' => 30,
+            'local_domain' => env('INVITATION_MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+            'from' => [
+                'address' => env('INVITATION_MAIL_FROM_ADDRESS', 'invitation@spartaninfosoft.com'),
+                'name' => env('INVITATION_MAIL_FROM_NAME', env('APP_NAME', 'Spartan Infosoft')),
+            ],
+        ],
+
+        'hr' => [
+            'transport' => env('HR_MAIL_MAILER', 'log'),
+            'scheme' => env('HR_MAIL_SCHEME'),
+            'host' => env('HR_MAIL_HOST', '127.0.0.1'),
+            'port' => env('HR_MAIL_PORT', 2525),
+            'username' => env('HR_MAIL_USERNAME'),
+            'password' => env('HR_MAIL_PASSWORD'),
+            'timeout' => 30,
+            'local_domain' => env('HR_MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+            'from' => [
+                'address' => env('HR_MAIL_FROM_ADDRESS', 'hr@spartaninfosoft.com'),
+                'name' => env('HR_MAIL_FROM_NAME', env('APP_NAME', 'Spartan Infosoft')),
+            ],
+        ],
 
         'smtp' => [
             'transport' => 'smtp',
@@ -111,7 +157,7 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
+        'address' => env('MAIL_FROM_ADDRESS', 'careers@spartaninfosoft.com'),
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 

@@ -13,7 +13,15 @@ class OfferSalaryCalculatorTest extends TestCase
         $salary = app(OfferSalaryCalculator::class)->calculate('1200000');
         $this->assertSame('48500.00', $salary['basic_monthly']);
         $this->assertSame('19400.00', $salary['hra_monthly']);
-        $this->assertSame('29100.00', $salary['special_monthly']);
+        $this->assertSame('14550.00', $salary['special_monthly']);
+        $this->assertSame('4850.00', $salary['lta_monthly']);
+        $this->assertSame('2425.00', $salary['medical_monthly']);
+        $this->assertSame('2425.00', $salary['conveyance_monthly']);
+        $this->assertSame('4850.00', $salary['other_monthly']);
+        $this->assertSame('58200.00', $salary['lta_annual']);
+        $this->assertSame('29100.00', $salary['medical_annual']);
+        $this->assertSame('29100.00', $salary['conveyance_annual']);
+        $this->assertSame('58200.00', $salary['other_annual']);
         $this->assertSame('3000.00', $salary['benefits_monthly']);
         $this->assertSame('97000.00', $salary['gross_monthly']);
         $this->assertSame('100000.00', $salary['ctc_monthly']);

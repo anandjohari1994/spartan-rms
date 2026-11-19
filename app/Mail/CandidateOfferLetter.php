@@ -10,7 +10,7 @@ class CandidateOfferLetter extends Mailable
 
     public function build(): static
     {
-        return $this->subject('Conditional Offer of Employment - Spartan Infosoft Pvt. Ltd.')
+        return $this->subject('Offer of Employment - Spartan Infosoft Pvt. Ltd.')
             ->text('mail.candidate-offer-letter')
             ->attachData($this->pdf, $this->filename, ['mime' => 'application/pdf']);
     }

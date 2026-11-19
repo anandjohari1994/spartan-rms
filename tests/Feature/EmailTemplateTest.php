@@ -41,7 +41,7 @@ class EmailTemplateTest extends TestCase
         $this->admin->assignRole('Super Admin');
         $this->actingAs($this->admin);
         $this->transport = new ArrayTransport;
-        config(['mail.default' => 'smtp', 'mail.from.address' => 'hr@example.test', 'mail.candidate_to_address' => null]);
+        config(['mail.default' => 'careers', 'mail.from.address' => 'careers@spartaninfosoft.com', 'mail.mailers.careers.from.address' => 'careers@spartaninfosoft.com', 'mail.mailers.invitation.from.address' => 'invitation@spartaninfosoft.com', 'mail.mailers.hr.from.address' => 'hr@spartaninfosoft.com', 'mail.mailers.careers.transport' => 'smtp', 'mail.mailers.invitation.transport' => 'smtp', 'mail.mailers.hr.transport' => 'smtp', 'mail.candidate_to_address' => null]);
         Mail::extend('smtp', fn () => $this->transport);
     }
 
@@ -91,7 +91,7 @@ class EmailTemplateTest extends TestCase
         $this->assertCount(1, $this->transport->messages());
         $mail = $this->transport->messages()->first()->getOriginalMessage();
         $this->assertCount(1, $mail->getTo());
-        $this->assertSame('hr@example.test', $mail->getTo()[0]->getAddress());
+        $this->assertSame('invitation@spartaninfosoft.com', $mail->getTo()[0]->getAddress());
         $this->assertSame([], $mail->getCc());
         $this->assertCount(1, $mail->getBcc());
         $this->assertStringContainsString('https://example.test/exam', $mail->getTextBody());
@@ -156,7 +156,7 @@ class EmailTemplateTest extends TestCase
         $this->assertCount(1, $this->transport->messages());
         $mail = $this->transport->messages()->first()->getOriginalMessage();
         $this->assertCount(1, $mail->getTo());
-        $this->assertSame('hr@example.test', $mail->getTo()[0]->getAddress());
+        $this->assertSame('invitation@spartaninfosoft.com', $mail->getTo()[0]->getAddress());
         $this->assertSame([], $mail->getCc());
         $this->assertCount(1, $mail->getBcc());
         $this->assertStringContainsString('<h2>Job Details</h2>', $mail->getHtmlBody());

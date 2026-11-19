@@ -1,13 +1,18 @@
 Dear {{ $details['candidate_name'] }},
 
-Congratulations on clearing the first two selection rounds at Spartan Infosoft Pvt. Ltd.
+Congratulations on your selection!
 
-Please find attached your conditional offer of employment for the position of {{ $details['designation'] }}. Review the complete letter, including the conditions and salary annexure, and return a signed copy by {{ \Carbon\Carbon::parse($details['acceptance_deadline'])->format('d F Y') }}.
+We are pleased to extend a conditional offer of employment to you for the position of {{ $details['designation'] }} at Spartan Infosoft Pvt. Ltd.
 
-The final client interview is pending. This is a conditional offer, subject to the terms in the attached letter.
+Please find attached your Conditional Offer of Employment letter for your review. We request you to carefully read the complete document, including all terms and conditions and the salary annexure.
 
-For questions, please reply to this email.
+If you wish to accept this offer, kindly sign the offer letter and share a scanned copy or digitally signed copy with us on or before {{ \Carbon\Carbon::parse($details['acceptance_deadline'])->format('d F Y') }}.
 
-Regards,
+Should you have any questions or require clarification regarding the offer, please feel free to reply to this email. Our HR team will be happy to assist you.
+
+We look forward to welcoming you to the Spartan Infosoft team and wish you success in your professional journey with us.
+
+Best Regards,
 HR Department
 Spartan Infosoft Pvt. Ltd.
+www.spartaninfosoft.com

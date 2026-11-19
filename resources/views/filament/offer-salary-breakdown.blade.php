@@ -36,7 +36,10 @@
             Basic: {{ $breakdown['salary_policy']['basic_percent_of_gross'] }}% of gross.
             HRA: {{ $breakdown['salary_policy']['hra_percent_of_basic'] }}% of basic.
             Employer PF: {{ $breakdown['salary_policy']['employer_pf_percent'] }}% of basic, capped at INR {{ number_format($breakdown['salary_policy']['pf_monthly_wage_ceiling'] * $breakdown['salary_policy']['employer_pf_percent'] / 100, 2) }}/month.
-            The remaining gross salary is special allowance; other allowances are zero.
+            @foreach (($breakdown['salary_policy']['allowance_percent_of_gross'] ?? []) as $key => $percent)
+                {{ $components[$key] }}: {{ $percent }}% of gross.
+            @endforeach
+            The remaining gross salary is special allowance.
         </p>
         <p class="text-xs text-gray-500 dark:text-gray-400">Annual amounts define the package. Monthly figures are rounded to two decimals, with rounding adjustments in special allowance. Employee deductions are not subtracted from CTC; this is not take-home pay.</p>
     @else

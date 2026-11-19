@@ -15,7 +15,8 @@ class OfferSalaryCalculator
         $basicRate = $policy['basic_percent_of_gross'] / 100;
         $hraRate = $policy['hra_percent_of_basic'] / 100;
         $pfRate = $policy['employer_pf_percent'] / 100;
-        if ($basicRate <= 0 || $basicRate * (1 + $hraRate) > 1 || $hraRate < 0 || $pfRate < 0 || $policy['pf_monthly_wage_ceiling'] < 0) {
+        $allowanceRates = array_map(fn ($percent) => $percent / 100, $policy['allowance_percent_of_gross']);
+        if ($basicRate <= 0 || $basicRate * (1 + $hraRate) + array_sum($allowanceRates) > 1 || min($allowanceRates) < 0 || $hraRate < 0 || $pfRate < 0 || $policy['pf_monthly_wage_ceiling'] < 0) {
             throw new \LogicException('Invalid offer letter salary allocation configuration.');
         }
         // Calculate in annual paise so the CTC never changes because of monthly rounding.
@@ -27,12 +28,13 @@ class OfferSalaryCalculator
         $gross = $ctc - $pf;
         $basic = (int) round($gross * $basicRate);
         $hra = (int) round($basic * $hraRate);
-        $annual = ['basic' => $basic, 'hra' => $hra, 'lta' => 0, 'medical' => 0, 'conveyance' => 0, 'special' => $gross - $basic - $hra, 'other' => 0, 'benefits' => $pf, 'gross' => $gross, 'ctc' => $ctc];
+        $allowances = array_map(fn ($rate) => (int) round($gross * $rate), $allowanceRates);
+        $annual = ['basic' => $basic, 'hra' => $hra, ...$allowances, 'special' => $gross - $basic - $hra - array_sum($allowances), 'benefits' => $pf, 'gross' => $gross, 'ctc' => $ctc];
         $monthly = array_map(fn (int $paise) => (int) round($paise / 12), $annual);
         // Allocate rounding residuals to special allowance, keeping both columns additive.
         $monthly['gross'] = $monthly['ctc'] - $monthly['benefits'];
-        $monthly['special'] = $monthly['gross'] - $monthly['basic'] - $monthly['hra'];
-        $result = ['annual_package' => $this->decimal($ctc), 'salary_policy' => $policy, 'salary_calculation_version' => 1];
+        $monthly['special'] = $monthly['gross'] - $monthly['basic'] - $monthly['hra'] - array_sum(array_intersect_key($monthly, $allowances));
+        $result = ['annual_package' => $this->decimal($ctc), 'salary_policy' => $policy, 'salary_calculation_version' => 2];
         foreach ($annual as $key => $paise) {
             $result[$key.'_annual'] = $this->decimal($paise);
             $result[$key.'_monthly'] = $this->decimal($monthly[$key]);

@@ -53,7 +53,8 @@ class EmailComposer
     public static function preview(): Section
     {
         return Section::make('Email preview')->schema([
-            TextEntry::make('preview_to')->label('To (company mailbox)')->state(fn () => CandidateOutreachService::defaultToAddress()),
+            TextEntry::make('preview_from')->label('From')->state(fn (Get $get) => CandidateOutreachService::fromAddress(EmailTemplate::find($get('email_template_id')))),
+            TextEntry::make('preview_to')->label('To (company mailbox)')->state(fn (Get $get) => CandidateOutreachService::defaultToAddress(EmailTemplate::find($get('email_template_id')))),
             TextEntry::make('preview_subject')->label('Subject')->state(fn (Get $get) => self::previewText($get, 'subject')),
             TextEntry::make('preview_body')->label('Message')->state(fn (Get $get) => $get('body_format') === 'markdown' ? EmailTemplateService::safeHtml(self::previewText($get, 'body')) : nl2br(e(self::previewText($get, 'body'))))->html()->prose(),
         ]);

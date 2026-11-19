@@ -43,7 +43,7 @@ class CandidateOutreachTest extends TestCase
         $this->hr = User::factory()->create(['is_active' => true]);
         $this->hr->assignRole('HR Executive');
         $this->transport = new ArrayTransport;
-        config(['mail.default' => 'smtp', 'mail.from.address' => 'hr@example.test', 'mail.candidate_to_address' => null]);
+        config(['mail.default' => 'careers', 'mail.from.address' => 'careers@spartaninfosoft.com', 'mail.mailers.careers.from.address' => 'careers@spartaninfosoft.com', 'mail.mailers.invitation.from.address' => 'invitation@spartaninfosoft.com', 'mail.mailers.hr.from.address' => 'hr@spartaninfosoft.com', 'mail.mailers.careers.transport' => 'smtp', 'mail.mailers.invitation.transport' => 'smtp', 'mail.mailers.hr.transport' => 'smtp', 'mail.candidate_to_address' => null]);
         Mail::extend('smtp', fn () => $this->transport);
     }
 
@@ -62,6 +62,52 @@ class CandidateOutreachTest extends TestCase
         return ['token' => (string) Str::uuid(), 'subject' => 'Assessment invitation', 'body' => "Hello,\nPlease attend at 10 AM IST.\nhttps://example.test/exam?a=1&b=2"];
     }
 
+    public function test_round_routing_uses_separate_accounts_and_default_mail_uses_careers(): void
+    {
+        $invitation = new ArrayTransport;
+        $careers = new ArrayTransport;
+        Mail::extend('smtp', fn ($config) => $config['from']['address'] === 'invitation@spartaninfosoft.com' ? $invitation : $careers);
+        $candidate = $this->candidate(0);
+        $service = app(CandidateOutreachService::class);
+        foreach (['round_1_invitation', 'round_1_cleared', 'round_2_invitation', 'round_2_cleared', 'round_3_invitation', null] as $code) {
+            if ($code === 'round_1_cleared') {
+                $candidate->interviewRounds()->where('round_number', 1)->update(['status' => 'Passed']);
+            }
+            if ($code === 'round_2_cleared') {
+                $candidate->interviewRounds()->where('round_number', 2)->update(['status' => 'Passed']);
+            }
+            $service->email($this->admin, [$candidate->id], [...$this->message(), 'email_template_id' => $code ? EmailTemplate::where('code', $code)->value('id') : null]);
+        }
+        $this->assertCount(2, $invitation->messages());
+        $this->assertCount(4, $careers->messages());
+        foreach ([$invitation, $careers] as $transport) {
+            $expected = $transport === $invitation ? 'invitation@spartaninfosoft.com' : 'careers@spartaninfosoft.com';
+            foreach ($transport->messages() as $sent) {
+                $mail = $sent->getOriginalMessage();
+                $this->assertSame($expected, $mail->getFrom()[0]->getAddress());
+                $this->assertSame($expected, $mail->getTo()[0]->getAddress());
+                $this->assertSame('candidate@example.test', $mail->getBcc()[0]->getAddress());
+            }
+        }
+        Mail::raw('Other application email', fn ($mail) => $mail->to('internal@example.test')->subject('General email'));
+        $this->assertCount(5, $careers->messages());
+        $this->assertSame('careers@spartaninfosoft.com', $careers->messages()->last()->getOriginalMessage()->getFrom()[0]->getAddress());
+    }
+
+    public function test_round_one_requires_its_own_delivery_transport(): void
+    {
+        config(['mail.mailers.invitation.transport' => 'log']);
+        $candidate = $this->candidate(0);
+        try {
+            app(CandidateOutreachService::class)->email($this->admin, [$candidate->id], [...$this->message(), 'email_template_id' => EmailTemplate::where('code', 'round_1_invitation')->value('id')]);
+            $this->fail('Round 1 used the careers transport instead of its own account.');
+        } catch (ValidationException $e) {
+            $this->assertStringContainsString('invitation mail account', $e->getMessage());
+            $this->assertCount(0, $this->transport->messages());
+            $this->assertDatabaseCount('candidate_email_batches', 0);
+        }
+    }
+
     public function test_one_message_uses_company_to_and_deduplicates_candidate_bcc_addresses(): void
     {
         $a = $this->candidate(0);
@@ -73,7 +119,7 @@ class CandidateOutreachTest extends TestCase
         $this->assertCount(1, $this->transport->messages());
         $mail = $this->transport->messages()->first()->getOriginalMessage();
         $this->assertCount(1, $mail->getTo());
-        $this->assertSame('hr@example.test', $mail->getTo()[0]->getAddress());
+        $this->assertSame('careers@spartaninfosoft.com', $mail->getTo()[0]->getAddress());
         $this->assertSame([], $mail->getCc());
         $this->assertCount(2, $mail->getBcc());
         $this->assertStringContainsString($data['body'], $mail->getTextBody());
@@ -124,7 +170,7 @@ class CandidateOutreachTest extends TestCase
 
     public function test_logging_mailer_cannot_claim_delivery(): void
     {
-        config(['mail.default' => 'log']);
+        config(['mail.mailers.careers.transport' => 'log']);
         $a = $this->candidate(0);
         $this->expectException(ValidationException::class);
         app(CandidateOutreachService::class)->email($this->admin, [$a->id], $this->message());
@@ -194,7 +240,7 @@ class CandidateOutreachTest extends TestCase
         $mail = $this->transport->messages()->first()->getOriginalMessage();
         $this->assertCount(2, $mail->getBcc());
         $this->assertCount(1, $mail->getTo());
-        $this->assertSame('hr@example.test', $mail->getTo()[0]->getAddress());
+        $this->assertSame('invitation@spartaninfosoft.com', $mail->getTo()[0]->getAddress());
         $this->assertSame([], $mail->getCc());
         foreach ([$a, $b] as $candidate) {
             $round = $candidate->interviewRounds()->where('round_number', 1)->first();

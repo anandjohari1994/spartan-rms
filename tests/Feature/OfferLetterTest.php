@@ -42,7 +42,7 @@ class OfferLetterTest extends TestCase
         $this->actingAs($this->admin);
         Storage::fake('private');
         $this->transport = new ArrayTransport;
-        config(['mail.default' => 'smtp', 'mail.from.address' => 'hr@example.test']);
+        config(['mail.default' => 'careers', 'mail.from.address' => 'careers@spartaninfosoft.com', 'mail.mailers.careers.from.address' => 'careers@spartaninfosoft.com', 'mail.mailers.invitation.from.address' => 'invitation@spartaninfosoft.com', 'mail.mailers.hr.from.address' => 'hr@spartaninfosoft.com', 'mail.mailers.careers.transport' => 'smtp', 'mail.mailers.invitation.transport' => 'smtp', 'mail.mailers.hr.transport' => 'smtp']);
         Mail::extend('smtp', fn () => $this->transport);
     }
 
@@ -62,7 +62,7 @@ class OfferLetterTest extends TestCase
     {
         return [
             'reference' => 'SI/OFFER/2026/001', 'address_line_1' => '12, Lotus Apartments', 'address_line_2' => 'Kalyani Nagar, Pune', 'state' => 'Maharashtra', 'pin_code' => '411014',
-            'designation' => 'Software Engineer', 'department' => 'Engineering', 'work_location' => 'Pune', 'reporting_manager' => 'Rohan Shah, Engineering Manager', 'employment_type' => 'Full-Time',
+            'designation' => 'Software Engineer', 'department' => 'Engineering', 'work_location' => 'Pune', 'employment_type' => 'Full-Time',
             'letter_date' => today()->toDateString(), 'joining_date' => today()->addDays(20)->toDateString(), 'commencement_date' => today()->addDays(20)->toDateString(), 'probation_months' => 6,
             'document_deadline' => today()->addDays(10)->toDateString(), 'valid_until' => today()->addDays(7)->toDateString(), 'acceptance_deadline' => today()->addDays(7)->toDateString(),
             'annual_package' => '636000.00',
@@ -117,6 +117,7 @@ class OfferLetterTest extends TestCase
         foreach ($this->transport->messages()->values() as $i => $message) {
             $mail = $message->getOriginalMessage();
             $this->assertSame('candidate'.$i.'@example.test', $mail->getTo()[0]->getAddress());
+            $this->assertSame('hr@spartaninfosoft.com', $mail->getFrom()[0]->getAddress());
             $this->assertCount(1, $mail->getTo());
             $this->assertSame([], $mail->getCc());
             $this->assertSame([], $mail->getBcc());
@@ -216,7 +217,7 @@ class OfferLetterTest extends TestCase
     {
         $candidate = $this->candidate();
         $offer = $this->draft($candidate);
-        config(['mail.default' => 'log']);
+        config(['mail.mailers.hr.transport' => 'log']);
         $this->expectException(ValidationException::class);
         app(OfferLetterService::class)->send($this->admin, [$candidate->id], [$candidate->id => $offer->revision]);
     }
@@ -228,7 +229,7 @@ class OfferLetterTest extends TestCase
             ->set('mountedActions.0.data.annual_package', '1200000');
         // Filament returns action modals as partial renders, outside Livewire's root HTML.
         $html = $page->instance()->getSchema('mountedActionSchema0')->toHtml();
-        foreach (['100,000.00', '48,500.00', '19,400.00', '3,000.00'] as $amount) {
+        foreach (['100,000.00', '48,500.00', '19,400.00', '3,000.00', '4,850.00', '2,425.00', '14,550.00'] as $amount) {
             $this->assertStringContainsString($amount, $html);
         }
         $page->set('mountedActions.0.data.annual_package', '');
@@ -236,6 +237,10 @@ class OfferLetterTest extends TestCase
         $offer = app(OfferLetterService::class)->saveDraft($this->admin, $candidate, [...self::details(), 'basic_monthly' => 1, 'benefits_monthly' => 999999, 'ctc_annual' => 1]);
         $this->assertSame('25000.00', $offer->details['basic_monthly']);
         $this->assertSame('3000.00', $offer->details['benefits_monthly']);
+        $this->assertSame('2500.00', $offer->details['lta_monthly']);
+        $this->assertSame('1250.00', $offer->details['medical_monthly']);
+        $this->assertSame('1250.00', $offer->details['conveyance_monthly']);
+        $this->assertSame('2500.00', $offer->details['other_monthly']);
         $this->assertSame('636000.00', $offer->details['ctc_annual']);
         $this->assertSame(app(OfferSalaryCalculator::class)->calculate('636000.00')['salary_policy'], $offer->details['salary_policy']);
     }

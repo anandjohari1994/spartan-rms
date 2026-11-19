@@ -21,7 +21,7 @@ class OfferLetterService
     public const TEXT_FIELDS = [
         'reference' => 'Reference number', 'address_line_1' => 'Address line 1', 'address_line_2' => 'Address line 2 / City',
         'state' => 'State', 'pin_code' => 'PIN code', 'designation' => 'Designation', 'department' => 'Department',
-        'work_location' => 'Work location', 'reporting_manager' => 'Reporting manager and designation',
+        'work_location' => 'Work location',
         'signatory_name' => 'Authorized signatory name', 'signatory_designation' => 'Signatory designation',
     ];
 
@@ -126,9 +126,9 @@ class OfferLetterService
     {
         abort_unless($actor->canEmailCandidates(), 403);
         Validator::make(['candidates' => $ids], ['candidates' => 'required|array|min:1|max:25', 'candidates.*' => 'required|integer|distinct'])->validate();
-        $mailer = config('mail.default');
+        $mailer = 'hr';
         if (! in_array(config("mail.mailers.{$mailer}.transport"), ['smtp', 'sendmail', 'ses', 'ses-v2', 'mailgun', 'postmark', 'resend'], true)) {
-            throw ValidationException::withMessages(['offer' => 'Configure a delivery mailer such as SMTP before sending offer letters.']);
+            throw ValidationException::withMessages(['offer' => 'Configure SMTP delivery for the HR mail account before sending offer letters.']);
         }
         $offers = DB::transaction(function () use ($actor, $ids, $revisions) {
             $candidates = Candidate::whereKey($ids)->orderBy('id')->lockForUpdate()->get();
@@ -164,7 +164,7 @@ class OfferLetterService
         $result = ['submitted' => 0, 'uncertain' => 0];
         foreach ($offers as $offer) {
             try {
-                $sent = Mail::to($offer->recipient)->send(new CandidateOfferLetter($offer->details, $this->pdf($offer), 'conditional-offer-'.$offer->candidate_id.'.pdf'));
+                $sent = Mail::mailer($mailer)->to($offer->recipient)->send(new CandidateOfferLetter($offer->details, $this->pdf($offer), 'conditional-offer-'.$offer->candidate_id.'.pdf'));
                 if ($sent === null) {
                     throw new \RuntimeException('Offer letter mail was cancelled.');
                 }

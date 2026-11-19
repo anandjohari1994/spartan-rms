@@ -87,21 +87,26 @@ class OfferLetterPdf
                 $pdf->Rect($entry['x'] - .15, $entry['top'] - .5, $available + .3, $entry['bottom'] - $entry['top'] + 1, 'F');
                 $pdf->SetTextColor(...($entry['color'] ?? [0, 0, 0]));
                 $x = ($entry['align'] ?? 'left') === 'right' ? $entry['right'] - $width() : $entry['x'];
+                $spaces = array_sum(array_map(fn ($run) => substr_count($run['text'], ' '), $runs));
+                $spacing = ($entry['align'] ?? 'left') === 'justify' && $spaces > 0 ? max(0, $available - $width()) / $spaces : 0;
                 foreach ($runs as $run) {
                     $pdf->SetFont('Carlito', $run['bold'] ? 'B' : '', $size);
-                    $pdf->Text($x, $entry['baseline'], $run['text']);
-                    $x += $pdf->GetStringWidth($run['text']);
+                    foreach (preg_split('/( )/', $run['text'], flags: PREG_SPLIT_DELIM_CAPTURE) as $part) {
+                        $pdf->Text($x, $entry['baseline'], $part);
+                        $x += $pdf->GetStringWidth($part) + ($part === ' ' ? $spacing : 0);
+                    }
                 }
             }
-            if ($index === 1) {
+            if (isset($page['optional_clause'])) {
                 // Resolve the reference's editorial choice without changing the surrounding clauses.
+                $clause = $page['optional_clause'];
                 $pdf->SetFillColor(255, 255, 255);
-                $pdf->Rect(71.9, 587.4, 452.2, 40.6, 'F');
+                $pdf->Rect($clause['x'] - .15, $clause['top'], $clause['right'] - $clause['x'] + .3, $clause['bottom'] - $clause['top'], 'F');
                 if ($details['optional_clause'] === 'include') {
                     $pdf->SetTextColor(0, 0, 0);
                     $pdf->SetFont('Carlito', '', 10.5);
-                    $pdf->SetXY(72.1, 586.4);
-                    $pdf->MultiCell(451.7, 14.4, '5.6 If you are not selected by the client, the Company may, at its sole discretion, consider you for other suitable opportunities, failing which your employment may be reviewed or ended in accordance with the Employment Agreement and applicable law.');
+                    $pdf->SetXY($clause['x'], $clause['baseline'] - 10.35);
+                    $pdf->MultiCell($clause['right'] - $clause['x'], 14.4, $clause['text']);
                 }
             }
         }

@@ -1,60 +1,78 @@
-import json, re
+"""Map the revised reference's named placeholders to runtime PDF fields."""
+import json
+import re
 from pathlib import Path
+
 import pdfplumber
 
-source = Path('resources/offer-letters/reference.pdf')
-keys = [
-    ['reference', 'address_line_1', 'address_line_2', 'state', 'pin_code', 'letter_date', 'candidate_name', 'designation', 'department', 'designation', 'department', 'work_location', 'reporting_manager', 'employment_type', 'joining_date', 'commencement_date', 'probation_months', 'document_deadline'],
-    ['annual_ctc', 'monthly_gross', 'salary_payment_day'],
-    ['valid_until', 'acceptance_deadline', 'candidate_name'],
-    ['signatory_name', 'candidate_name', 'signatory_designation', 'signature_date'],
-    ['designation'] + [f'{k}_{period}' for k in ['basic', 'hra', 'lta', 'medical', 'conveyance', 'special'] for period in ['monthly', 'annual']] + ['other_label', 'other_monthly', 'other_annual', 'gross_monthly', 'gross_annual', 'benefits_monthly', 'benefits_annual', 'ctc_monthly', 'annual_ctc'],
-]
 pages = []
-with pdfplumber.open(source) as doc:
-    for page_index, page in enumerate(doc.pages):
-        matches = [m for m in page.search(r'\[[^\]]+\]') if not m['text'].startswith('[OPTIONAL')]
-        assert len(matches) == len(keys[page_index]), (page_index, len(matches))
-        for match, key in zip(matches, keys[page_index]):
-            match['key'] = key
-        entries = []
+value_fields = {'designation', 'department', 'work_location', 'employment_type', 'joining_date', 'commencement_date', 'months'}
+aliases = {'months': 'probation_months'}
+
+def entry(page, match, left, right, runs=None, **extra):
+    return {'x':left, 'right':right, 'top':match['top'], 'bottom':match['bottom'],
+            'baseline':page.height-match['chars'][0]['matrix'][5], 'size':match['chars'][0]['size'],
+            'runs':runs or [{'key':aliases.get(match['key'],match['key']),'bold':'Bold' in match['chars'][0]['fontname']}], **extra}
+
+with pdfplumber.open('resources/offer-letters/revised-reference.pdf') as doc:
+    for page_index,page in enumerate(doc.pages):
+        matches=page.search(r'\[[a-z0-9_]+\]') or []
+        for m in matches:
+            m['key']=m['text'][1:-1]
+        entries=[]
+        is_annexure='Annexure A: Salary Break-up' in page.extract_text()
         for line in page.extract_text_lines():
-            on_line = [m for m in matches if abs(m['top'] - line['top']) < 1]
+            on_line=[m for m in matches if abs(m['top']-line['top'])<1]
             if not on_line:
                 continue
-            if page_index == 0 and 420 < line['top'] < 615:
-                # Keep the original label column and replace only its value column.
-                m = on_line[0]
-                trailing = line['text'].split(m['text'], 1)[1]
-                entries.append({'x':m['x0'], 'right':523.9, 'top':m['top'], 'bottom':m['bottom'], 'baseline':page.height-m['chars'][0]['matrix'][5], 'size':m['chars'][0]['size'], 'runs':[{'key':m['key'],'bold':False}, {'text':trailing,'bold':False}]})
-                continue
-            if page_index == 4 and line['top'] > 150:
+            if is_annexure and any(m['key'].endswith(('_monthly','_annual')) or m['key']=='other_label' for m in on_line):
                 for m in on_line:
-                    is_total = m['key'] in ['gross_monthly', 'gross_annual']
-                    is_ctc = m['key'] in ['ctc_monthly', 'annual_ctc']
-                    entries.append({'x': m['x0'] if m['key'] == 'other_label' else m['x1']-100, 'right': m['x1'] if m['key'] != 'other_label' else 285, 'top': m['top'], 'bottom': m['bottom'], 'baseline': page.height - m['chars'][0]['matrix'][5], 'size': m['chars'][0]['size'], 'align': 'left' if m['key']=='other_label' else 'right', 'background': [33, 94, 168] if is_ctc else ([231,238,247] if is_total else [255,255,255]), 'color': [255,255,255] if is_ctc else [0,0,0], 'runs': [{'key':m['key'], 'bold': 'Bold' in m['chars'][0]['fontname']}]})
+                    is_total=m['key'].startswith('gross_')
+                    is_ctc=m['key'] in ['ctc_monthly','annual_ctc']
+                    is_label=m['key']=='other_label'
+                    right=286 if is_label else m['x1']
+                    entries.append(entry(page,m,m['x0'] if is_label else right-100,right,
+                        align='left' if is_label else 'right',
+                        background=[33,94,168] if is_ctc else ([231,238,247] if is_total else [255,255,255]),
+                        color=[255,255,255] if is_ctc else [0,0,0]))
                 continue
-            parts = re.split(r'(\[[^\]]+\])', line['text'])
-            runs = []
-            mi = 0
-            for part in parts:
+            first=on_line[0]
+            if first['key'] in value_fields and 230 < first['x0'] < 250:
+                trailing=line['text'].split(first['text'],1)[1]
+                entries.append(entry(page,first,first['x0'],523.4,runs=[{'key':aliases.get(first['key'],first['key']),'bold':False},{'text':trailing,'bold':False}]))
+                continue
+            if any(m['key']=='signatory_name' for m in on_line):
+                for m in on_line:
+                    entries.append(entry(page,m,m['x0'],290 if m['x0']<300 else 523.4))
+                continue
+            if first['key'] in ['signatory_designation','signature_date']:
+                runs = ([{'text':'Date: ','bold':False}] if first['key']=='signature_date' else [])
+                runs.append({'key':first['key'],'bold':False})
+                if first['key']=='signatory_designation':
+                    runs.append({'text':', HR Department','bold':False})
+                entries.append(entry(page,line,line['x0'],290,runs=runs))
+                continue
+            runs=[]
+            mi=0
+            for part in re.split(r'(\[[a-z0-9_]+\])',line['text']):
                 if not part:
                     continue
                 if part.startswith('['):
                     m=on_line[mi]; mi+=1
-                    runs.append({'key':m['key'], 'bold':'Bold' in m['chars'][0]['fontname']})
+                    runs.append({'key':aliases.get(m['key'],m['key']),'bold':'Bold' in m['chars'][0]['fontname']})
                 else:
-                    runs.append({'text':part, 'bold': 'Bold' in line['chars'][0]['fontname'] and mi == 0})
-            # Signature columns are handled separately to preserve the acceptance block.
-            if page_index == 3 and len(on_line)==2:
-                for m in on_line:
-                    entries.append({'x': m['x0'], 'right': 290 if m['x0']<300 else 523.4, 'top':m['top'], 'bottom':m['bottom'], 'baseline':page.height-m['chars'][0]['matrix'][5], 'size':10, 'runs':[{'key':m['key'],'bold':True}]})
-                continue
-            right = 290 if page_index == 3 else 523.9
-            # Preserve signature/date text in the second column.
-            if page_index == 3:
-                runs = runs[:2] if on_line[0]['key'] == 'signature_date' else runs[:1]
-                if on_line[0]['key']=='signatory_designation': runs.append({'text':', HR Department','bold':False})
-            entries.append({'x':line['x0'], 'right':right, 'top':line['top'], 'bottom':line['bottom'], 'baseline':page.height-line['chars'][0]['matrix'][5], 'size':line['chars'][0]['size'], 'align':'right' if page_index==0 and on_line[0]['key']=='letter_date' else 'left', 'runs':runs})
-        pages.append({'width':page.width,'height':page.height,'entries':entries})
+                    runs.append({'text':part,'bold':'Bold' in line['chars'][0]['fontname'] and mi==0})
+            # Full lines of justified paragraphs reach the right body margin;
+            # preserve this spacing when replacing their variable text at runtime.
+            align = 'right' if first['key']=='letter_date' else ('justify' if abs(line['x1']-523.4)<.2 and abs(line['x0']-72.1)<.2 else 'left')
+            entries.append(entry(page,line,72.1 if first['key']=='letter_date' else line['x0'],523.4,runs=runs,align=align))
+        spec={'width':page.width,'height':page.height,'entries':entries}
+        optional=page.search(re.compile(r'4\.7 If you are not selected.*?applicable law\.',re.DOTALL))
+        if optional:
+            m=optional[0]
+            spec['optional_clause']={'x':72.1,'top':m['top']-.5,'right':523.4,'bottom':m['bottom']+.5,
+                                     'baseline':page.height-m['chars'][0]['matrix'][5],
+                                     'text':' '.join(m['text'].split())}
+        pages.append(spec)
+assert sum('optional_clause' in page for page in pages)==1, 'Optional clause must occupy one page.'
 Path('resources/offer-letters/layout.json').write_text(json.dumps(pages,indent=2),encoding='utf-8')
