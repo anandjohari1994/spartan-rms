@@ -37,6 +37,12 @@ with pdfplumber.open('resources/offer-letters/revised-reference.pdf') as doc:
                         color=[255,255,255] if is_ctc else [0,0,0]))
                 continue
             first=on_line[0]
+            if first['key'] in ['notice_terms', 'working_terms', 'leave_policy']:
+                max_lines = 6 if first['key']=='leave_policy' else 3
+                block = entry(page,first,72.1,523.4,multiline=True,max_lines=max_lines)
+                block['bottom'] += (max_lines-1)*14.4
+                entries.append(block)
+                continue
             if first['key'] in value_fields and 230 < first['x0'] < 250:
                 trailing=line['text'].split(first['text'],1)[1]
                 entries.append(entry(page,first,first['x0'],523.4,runs=[{'key':aliases.get(first['key'],first['key']),'bold':False},{'text':trailing,'bold':False}]))

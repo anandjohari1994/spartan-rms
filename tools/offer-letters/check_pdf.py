@@ -7,7 +7,7 @@ from reportlab.lib.utils import ImageReader
 with pdfplumber.open(sys.argv[1]) as doc:
     full='\n'.join(p.extract_text() for p in doc.pages)
     normalized=' '.join(full.split())
-    assert len(doc.pages)==5
+    assert len(doc.pages)==6
     assert '("Company")' in normalized
     assert '("the Company")' not in normalized
     assert 'Reporting Manager' not in normalized
@@ -17,7 +17,12 @@ with pdfplumber.open(sys.argv[1]) as doc:
     assert 'Clause 2' in normalized and 'Clause 3 (Compensation)' in normalized
     assert '5.1 "Client billing' not in normalized and 'rounds."' not in normalized
     assert normalized.count('Completed Company joining and employee information forms;')==1
-    regular_prefixes={'4.1','4.2','4.3','4.4','5.1','(a)','(b)','(c)','(d)'}
+    acceptance = normalized.split('8. Acceptance & Acknowledgement', 1)[1].split('We look forward', 1)[0]
+    assert re.fullmatch(r'Please indicate your acceptance by signing and returning the duplicate copy of this letter\. By signing below, I, .+?, confirm that I have read and understood this letter\. I accept this conditional offer on the terms stated above\.', acceptance.strip()), acceptance
+    assert not re.search(r'\([a-f]\)', acceptance), 'Obsolete acceptance items remain'
+    confidentiality = 'This Offer Letter must not be shared, forwarded, copied, or disclosed to any third party or public platform without prior written authorization from Spartan Infosoft Pvt. Ltd. Unauthorized disclosure may result in appropriate disciplinary or legal action, subject to applicable laws.'
+    assert normalized.count(confidentiality)==1, 'Confidentiality clause missing or duplicated'
+    regular_prefixes={'4.1','4.2','4.3','4.4','5.1'}
     checked=set()
     active=None
     for page in doc.pages:
@@ -38,6 +43,8 @@ with pdfplumber.open(sys.argv[1]) as doc:
             bottom=max(l['bottom'] for l in billing_lines)
             assert not [r for r in page.rects if r['top']<bottom and r['bottom']>top and r['x0']<525 and r['x1']>70], 'Billing paragraph still has a box'
     assert checked==regular_prefixes, checked
+    for heading in ['6.8 Notice Period', '6.9 Working Hours and Days', '6.10 Leave Policy', '6.11 Certification Reimbursement:', '6.12 Health Insurance:', '6.13 Travel Allowance:', '6.14 No Employment Bond:', '6.15 Company Laptop:', '6.16 Data Confidentiality:']:
+        assert heading in normalized, f'Missing employment term: {heading}'
     signature_size=ImageReader('resources/offer-letters/authorized-signature.png').getSize()
     signatures=[im for page in doc.pages for im in page.images if tuple(im['srcsize'])==signature_size]
     assert len(signatures)==1, 'Expected one authorized signature'

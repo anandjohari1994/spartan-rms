@@ -16,7 +16,7 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image, KeepTogether
 
 ROOT = Path('resources/offer-letters')
 WIDTH, HEIGHT = 595.304, 841.89
@@ -118,20 +118,37 @@ for i in range(1, 8):
     label = text.split(':', 1)[0]+':' if ':' in text else 'Employment Agreement:'
     clause(f'6.{i}', text, label)
 
+# Reserve complete paragraphs so editable employment policies wrap at runtime.
+# Keep each label and its reserved body together across page breaks.
+for label, key, lines in [('6.8 Notice Period', 'notice_terms', 3), ('6.9 Working Hours and Days', 'working_terms', 3), ('6.10 Leave Policy', 'leave_policy', 6)]:
+    story.append(KeepTogether([
+        Paragraph('<b>'+label+'</b>', ParagraphStyle('TermLabel', parent=body, spaceAfter=1)),
+        Paragraph('['+key+']', ParagraphStyle('TermBody', parent=body, spaceAfter=0)),
+        Spacer(1, (lines-1)*14.4+4),
+    ]))
+
+for number, label, text in [
+    ('6.11', 'Certification Reimbursement:', 'The company will reimburse eligible professional certification expenses as per company policy.'),
+    ('6.12', 'Health Insurance:', 'Health insurance coverage will be provided as per company policy.'),
+    ('6.13', 'Travel Allowance:', 'Travel allowance will be provided as per company policy.'),
+    ('6.14', 'No Employment Bond:', 'No employment bond or contractual lock-in is applicable.'),
+    ('6.15', 'Company Laptop:', 'The company will deliver a laptop to your registered address for official client-related work only. The laptop must be used exclusively for authorized business purposes.'),
+    ('6.16', 'Data Confidentiality:', 'All company and client information, documents, credentials, and data must remain strictly confidential and must not be shared, disclosed, or uploaded to any third party or public platform without prior written authorization.'),
+]:
+    clause(number, label+' '+text, label)
+
 h('7. Conditional Offer Validity')
 for i in range(1, 4):
     text = original_clause(f'8.{i}').replace('[Validity Date]', '[valid_until]').replace('[Acceptance Deadline]', '[acceptance_deadline]')
+    if i == 3:
+        text = 'This Offer Letter must not be shared, forwarded, copied, or disclosed to any third party or public platform without prior written authorization from Spartan Infosoft Pvt. Ltd. Unauthorized disclosure may result in appropriate disciplinary or legal action, subject to applicable laws.'
     clause(f'7.{i}', text)
 
 h('8. Acceptance & Acknowledgement')
-p('Please indicate your acceptance by signing and returning the duplicate copy of this letter. By signing below, I, <b>[candidate_name]</b>, confirm that I have read and understood this letter and that:')
-for letter in 'abcdef':
-    match = re.search(rf'(?ms)^\({letter}\) (.*?)(?=^\([a-f]\) |^I accept this|\Z)', source_text)
-    text = ' '.join(match.group(1).split())
-    p('('+letter+') '+escape(text))
+p('Please indicate your acceptance by signing and returning the duplicate copy of this letter. By signing below, I, <b>[candidate_name]</b>, confirm that I have read and understood this letter.')
 p('I accept this conditional offer on the terms stated above.')
 p('We look forward to welcoming you to the Spartan Infosoft team and are confident that you will find your association with us both professionally rewarding and personally fulfilling.')
-p('Yours sincerely,')
+p('Yours sincerely,', ParagraphStyle('SignatureIntro', parent=body, keepWithNext=True))
 signature_path = str(ROOT / 'authorized-signature.png')
 signature_width, signature_height = ImageReader(signature_path).getSize()
 sign_image = Image(signature_path, width=132, height=132 * signature_height / signature_width, hAlign='LEFT')
@@ -141,7 +158,7 @@ signature = Table([
     [Paragraph('<b>[signatory_name]</b>',cell),Paragraph('<b>[candidate_name]</b>',cell)],
     [Paragraph('[signatory_designation], HR Department',cell),Paragraph('Signature: ____________________',cell)],
     [Paragraph('Date: [signature_date]',cell),Paragraph('Date: __________  Place: __________',cell)],
-], colWidths=[BODY_WIDTH/2]*2, rowHeights=[20,sign_image.drawHeight+5,18,16,16], hAlign='LEFT')
+], colWidths=[BODY_WIDTH/2]*2, rowHeights=[20,sign_image.drawHeight+5,18,16,16], hAlign='LEFT', splitByRow=False)
 signature.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'TOP'),('LEFTPADDING',(0,0),(-1,-1),5.4),('TOPPADDING',(0,0),(-1,-1),0)]))
 story.append(signature)
 

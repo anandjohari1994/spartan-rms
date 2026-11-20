@@ -14,10 +14,12 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
@@ -62,7 +64,22 @@ class OfferLetterResource extends Resource
         $text = fn (string $name) => TextInput::make($name)->label(OfferLetterService::TEXT_FIELDS[$name])->required()->maxLength(150);
         $dates = [];
         foreach (OfferLetterService::DATE_FIELDS as $name => $label) {
-            $dates[] = DatePicker::make($name)->label($label)->required();
+            $date = DatePicker::make($name)->label($label)->required();
+            if (in_array($name, ['joining_date', 'commencement_date', 'valid_until'])) {
+                $date->live()->afterStateUpdated(function (?string $state, ?string $old, Get $get, Set $set) use ($name) {
+                    $current = [];
+                    foreach (array_keys(OfferLetterService::DATE_FIELDS) as $key) {
+                        $current[$key] = $get($key);
+                    }
+                    foreach (OfferLetterService::dependentDates($name, $state, $old, $current) as $key => $value) {
+                        $set($key, $value);
+                    }
+                });
+            }
+            if ($name === 'joining_date') {
+                $date->helperText('Sets commencement to the previous Monday-Friday working day. Linked deadlines follow it; manually changed dates are kept.');
+            }
+            $dates[] = $date;
         }
 
         return [
@@ -76,6 +93,10 @@ class OfferLetterResource extends Resource
                 TextInput::make('probation_months')->numeric()->integer()->minValue(0)->maxValue(36)->required(),
             ]),
             Section::make('Dates')->columns(2)->schema($dates),
+            Section::make('Employment terms')->description('These editable terms are included in the offer letter.')->columns(2)->schema([
+                ...array_map(fn ($name) => TextInput::make($name)->label(OfferLetterService::TERM_FIELDS[$name])->required()->maxLength(80), ['notice_probation', 'notice_confirmed', 'working_hours', 'working_days']),
+                Textarea::make('leave_policy')->label('Leave policy')->required()->maxLength(600)->rows(5)->columnSpanFull(),
+            ]),
             Section::make('Salary annexure')->description('Enter the annual package in rupees. The complete salary breakup is calculated automatically, including employer PF within CTC.')->columns(2)->schema([
                 TextInput::make('annual_package')->label('Annual package (CTC)')->prefix('INR')->numeric()->step('0.01')->minValue(1)->maxValue(999999999.99)->required()->live(debounce: 500)
                     ->helperText('Example: enter 600000 for a 6 lakh annual package.'),

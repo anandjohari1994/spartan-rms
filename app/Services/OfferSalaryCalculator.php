@@ -12,6 +12,7 @@ class OfferSalaryCalculator
     {
         Validator::make(['annual_package' => $annualCtc], ['annual_package' => self::ANNUAL_CTC_RULES])->validate();
         $policy = config('offer_letters');
+        unset($policy['defaults']);
         $basicRate = $policy['basic_percent_of_gross'] / 100;
         $hraRate = $policy['hra_percent_of_basic'] / 100;
         $pfRate = $policy['employer_pf_percent'] / 100;

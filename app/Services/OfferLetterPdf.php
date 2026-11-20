@@ -13,6 +13,8 @@ class OfferLetterPdf
     public function values(array $details): array
     {
         $values = $details;
+        $values['notice_terms'] = 'The notice period is '.$details['notice_probation'].' during probation and '.$details['notice_confirmed'].' after confirmation, subject to the Employment Agreement and applicable law.';
+        $values['working_terms'] = 'Regular working hours: '.$details['working_hours'].'. Weekly working days: '.$details['working_days'].'. Daily timings and rest breaks will be communicated by the Company.';
         foreach (['letter_date', 'joining_date', 'commencement_date', 'document_deadline', 'valid_until', 'acceptance_deadline'] as $key) {
             $values[$key] = Carbon::parse($details[$key])->format('d F Y');
         }
@@ -67,6 +69,10 @@ class OfferLetterPdf
             $pdf->useTemplate($pdf->importPage($index + 1));
             foreach ($page['entries'] as $entry) {
                 $runs = array_map(fn ($run) => [...$run, 'text' => isset($run['key']) ? (string) $values[$run['key']] : $run['text']], $entry['runs']);
+                if ($entry['multiline'] ?? false) {
+                    $this->writeParagraph($pdf, $entry, $runs[0]['text'], $runs[0]['key']);
+                    continue;
+                }
                 $size = $entry['size'];
                 $width = function () use ($pdf, $runs, &$size): float {
                     $total = 0;
@@ -112,5 +118,42 @@ class OfferLetterPdf
         }
 
         return $pdf->Output('S');
+    }
+
+    private function writeParagraph(OfferPdfDocument $pdf, array $entry, string $text, string $key): void
+    {
+        $field = match ($key) { 'notice_terms' => 'notice_probation', 'working_terms' => 'working_hours', default => $key };
+        $pdf->SetFont('Carlito', '', 10.5);
+        $width = $entry['right'] - $entry['x'];
+        $lines = [];
+        $line = '';
+        foreach (preg_split('/\s+/u', trim($text)) as $word) {
+            if ($pdf->GetStringWidth($word) > $width) {
+                throw ValidationException::withMessages([$field => 'An employment term contains a word too long for the letter. Please shorten it.']);
+            }
+            $next = $line === '' ? $word : $line.' '.$word;
+            if ($pdf->GetStringWidth($next) > $width) {
+                $lines[] = $line;
+                $line = $word;
+            } else {
+                $line = $next;
+            }
+        }
+        $lines[] = $line;
+        if (count($lines) > $entry['max_lines']) {
+            throw ValidationException::withMessages([$field => 'These employment terms are too long for the letter. Please shorten them and preview again.']);
+        }
+        $pdf->SetFillColor(255, 255, 255);
+        $pdf->Rect($entry['x'] - .15, $entry['top'] - .5, $width + .3, $entry['bottom'] - $entry['top'] + 1, 'F');
+        $pdf->SetTextColor(0, 0, 0);
+        foreach ($lines as $index => $line) {
+            $spaceCount = substr_count($line, ' ');
+            $extra = $index < count($lines) - 1 && $spaceCount > 0 ? ($width - $pdf->GetStringWidth($line)) / $spaceCount : 0;
+            $x = $entry['x'];
+            foreach (explode(' ', $line) as $word) {
+                $pdf->Text($x, $entry['baseline'] + $index * 14.4, $word);
+                $x += $pdf->GetStringWidth($word.' ') + $extra;
+            }
+        }
     }
 }

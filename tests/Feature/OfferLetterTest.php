@@ -61,6 +61,7 @@ class OfferLetterTest extends TestCase
     public static function details(): array
     {
         return [
+            ...config('offer_letters.defaults'),
             'reference' => 'SI/OFFER/2026/001', 'address_line_1' => '12, Lotus Apartments', 'address_line_2' => 'Kalyani Nagar, Pune', 'state' => 'Maharashtra', 'pin_code' => '411014',
             'designation' => 'Software Engineer', 'department' => 'Engineering', 'work_location' => 'Pune', 'employment_type' => 'Full-Time',
             'letter_date' => today()->toDateString(), 'joining_date' => today()->addDays(20)->toDateString(), 'commencement_date' => today()->addDays(20)->toDateString(), 'probation_months' => 6,
@@ -73,6 +74,77 @@ class OfferLetterTest extends TestCase
     private function draft(Candidate $candidate)
     {
         return app(OfferLetterService::class)->saveDraft($this->admin, $candidate, self::details());
+    }
+
+    public function test_prepare_offer_prefills_editable_defaults_and_linked_dates(): void
+    {
+        $candidate = $this->candidate();
+        $page = Livewire::test(ListOfferLetters::class)->mountTableAction('prepareOffer', $candidate);
+        foreach (config('offer_letters.defaults') as $key => $value) {
+            $page->assertSet('mountedActions.0.data.'.$key, $value);
+        }
+        $page->assertSet('mountedActions.0.data.letter_date', today()->toDateString());
+        $page->set('mountedActions.0.data.joining_date', '2026-12-07'); // Monday -> Friday
+        foreach (['commencement_date', 'document_deadline', 'valid_until', 'acceptance_deadline'] as $key) {
+            $page->assertSet('mountedActions.0.data.'.$key, '2026-12-04');
+        }
+        $page->set('mountedActions.0.data.joining_date', '2026-12-08');
+        foreach (['commencement_date', 'document_deadline', 'valid_until', 'acceptance_deadline'] as $key) {
+            $page->assertSet('mountedActions.0.data.'.$key, '2026-12-07');
+        }
+        $page->set('mountedActions.0.data.document_deadline', '2026-12-03');
+        $page->set('mountedActions.0.data.commencement_date', '2026-12-04')
+            ->assertSet('mountedActions.0.data.document_deadline', '2026-12-03')
+            ->assertSet('mountedActions.0.data.valid_until', '2026-12-04')
+            ->assertSet('mountedActions.0.data.acceptance_deadline', '2026-12-04');
+        $page->set('mountedActions.0.data.valid_until', '2026-12-03')
+            ->assertSet('mountedActions.0.data.acceptance_deadline', '2026-12-03');
+        $page->set('mountedActions.0.data.acceptance_deadline', '2026-12-02');
+        $page->set('mountedActions.0.data.valid_until', '2026-12-04')
+            ->assertSet('mountedActions.0.data.acceptance_deadline', '2026-12-02');
+        $page->set('mountedActions.0.data.joining_date', '2026-12-09')
+            ->assertSet('mountedActions.0.data.commencement_date', '2026-12-04');
+        $page->set('mountedActions.0.data.annual_package', '500000')
+            ->set('mountedActions.0.data.department', 'Quality Assurance')
+            ->assertSet('mountedActions.0.data.annual_package', '500000')
+            ->assertSet('mountedActions.0.data.department', 'Quality Assurance');
+    }
+
+    public function test_previous_business_day_skips_weekends_and_month_year_boundaries(): void
+    {
+        foreach (['2026-12-07' => '2026-12-04', '2026-12-06' => '2026-12-04', '2026-12-05' => '2026-12-04', '2026-12-08' => '2026-12-07', '2027-01-01' => '2026-12-31', '2027-03-01' => '2027-02-26'] as $joining => $expected) {
+            $this->assertSame($expected, OfferLetterService::previousBusinessDay($joining));
+        }
+        $this->assertNull(OfferLetterService::previousBusinessDay(null));
+        $this->assertNull(OfferLetterService::previousBusinessDay('not-a-date'));
+        $this->assertNull(OfferLetterService::previousBusinessDay('2026-02-30'));
+        $linked = array_fill_keys(['commencement_date', 'document_deadline', 'valid_until', 'acceptance_deadline'], '2026-12-07');
+        $this->assertSame(array_fill_keys(array_keys($linked), null), OfferLetterService::dependentDates('joining_date', null, '2026-12-08', $linked));
+    }
+
+    public function test_saved_custom_values_survive_reopening_and_terms_are_stored(): void
+    {
+        $candidate = $this->candidate();
+        $offer = app(OfferLetterService::class)->saveDraft($this->admin, $candidate, [...self::details(), 'notice_probation' => '15 days', 'notice_confirmed' => '2 months', 'working_hours' => '8 hours per day', 'leave_policy' => "Planned leave requires approval.\nEmergency leave must be reported promptly."]);
+        $defaults = app(OfferLetterService::class)->defaults($candidate->fresh());
+        $this->assertSame('Engineering', $defaults['department']);
+        $this->assertSame(6, $defaults['probation_months']);
+        $this->assertSame('636000.00', $defaults['annual_package']);
+        $this->assertSame('15 days', $defaults['notice_probation']);
+        $this->assertSame('Planned leave requires approval. Emergency leave must be reported promptly.', $offer->details['leave_policy']);
+        $this->assertStringContainsString('15 days during probation and 2 months after confirmation', app(OfferLetterPdf::class)->values($offer->details)['notice_terms']);
+    }
+
+    public function test_terms_that_overflow_the_pdf_are_rejected_before_saving(): void
+    {
+        $candidate = $this->candidate();
+        try {
+            app(OfferLetterService::class)->saveDraft($this->admin, $candidate, [...self::details(), 'leave_policy' => str_repeat('WIDEWORD ', 65)]);
+            $this->fail('Overflowing leave policy was saved.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('leave_policy', $exception->errors());
+            $this->assertDatabaseCount('offer_letters', 0);
+        }
     }
 
     public function test_only_two_passed_rounds_with_pending_client_interview_are_listed(): void
