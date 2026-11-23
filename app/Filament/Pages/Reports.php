@@ -41,6 +41,7 @@ class Reports extends Page
             Select::make('job_position_id')->label('Position')->options(fn () => JobPosition::pluck('name', 'id'))->searchable(), TextInput::make('location')->maxLength(120),
             Select::make('recruitment_status')->options(Recruitment::options(Recruitment::STATUSES)), Select::make('calling_status')->options(Recruitment::options(Recruitment::CALLS)),
             Select::make('round_number')->label('Progressed interview round')->options(Recruitment::ROUNDS),
+            Select::make('offer_sent')->label('Offer letter sent')->options(['sent' => 'Sent to provider', 'not_sent' => 'Not sent to provider'])->placeholder('All candidates'),
         ]);
     }
 

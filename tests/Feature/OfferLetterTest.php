@@ -3,10 +3,17 @@
 namespace Tests\Feature;
 
 use App\Filament\Resources\OfferLetterResource\Pages\ListOfferLetters;
+use App\Filament\Resources\ActivityLogResource\Pages\ListActivityLogs;
+use App\Models\ActivityLog;
 use App\Models\Candidate;
 use App\Models\JobPosition;
+use App\Models\OfferLetterDelivery;
 use App\Models\User;
 use App\Services\CandidateService;
+use App\Services\EmailActivityDetails;
+use App\Services\DashboardService;
+use App\Services\ReportService;
+use App\Filament\Pages\Reports;
 use App\Services\OfferLetterPdf;
 use App\Services\OfferLetterService;
 use App\Services\OfferSalaryCalculator;
@@ -17,8 +24,10 @@ use Illuminate\Mail\Transport\ArrayTransport;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 class OfferLetterTest extends TestCase
@@ -74,6 +83,232 @@ class OfferLetterTest extends TestCase
     private function draft(Candidate $candidate)
     {
         return app(OfferLetterService::class)->saveDraft($this->admin, $candidate, self::details());
+    }
+
+    public function test_offer_email_activity_snapshots_actual_message_for_send_and_resend(): void
+    {
+        $candidate = $this->candidate();
+        $offer = $this->draft($candidate);
+        $service = app(OfferLetterService::class);
+        $service->send($this->admin, [$candidate->id], [$candidate->id => $offer->revision]);
+        $service->resend($this->admin, $candidate->id, $offer->revision, (string) Str::uuid());
+        $logs = ActivityLog::where('event', 'offer.submitted')->orderBy('id')->get();
+        $this->assertCount(2, $logs);
+        $this->assertNotSame($logs[0]->new_values['delivery_id'], $logs[1]->new_values['delivery_id']);
+        foreach ($logs as $index => $log) {
+            $mail = $this->transport->messages()->values()[$index]->getOriginalMessage();
+            $values = $log->new_values;
+            $this->assertSame($mail->getTextBody(), $values['body']);
+            $this->assertSame($mail->getSubject(), $values['subject']);
+            $this->assertSame($mail->getFrom()[0]->getAddress(), $values['from']);
+            $this->assertSame($mail->getTo()[0]->getAddress(), $values['to']);
+            $this->assertSame($candidate->email, $values['candidate_email']);
+            $this->assertSame('To', $values['recipient_type']);
+            $this->assertSame($offer->revision, $values['revision']);
+            $this->assertSame($offer->pdf_sha256, $values['attachment_sha256']);
+            $this->assertNotEmpty($values['message_id']);
+            $this->assertNotEmpty($values['submitted_at']);
+        }
+        $candidate->forceFill(['email' => 'changed@example.test', 'full_name' => 'Changed name'])->save();
+        $service->saveDraft($this->admin, $candidate, [...self::details(), 'revision' => $offer->revision, 'designation' => 'New role']);
+        $this->assertSame('candidate0@example.test', app(EmailActivityDetails::class)->forRecord($logs[0])['candidate_email']);
+        $page = Livewire::test(ListActivityLogs::class)
+            ->filterTable('event', 'offer.submitted')
+            ->searchTable('candidate0@example.test')
+            ->assertCanSeeTableRecords($logs)
+            ->mountTableAction('details', $logs[0]);
+        $html = $page->instance()->getMountedAction()->getModalContent()->render();
+        $this->assertStringContainsString('Email content', $html);
+        $this->assertStringContainsString('candidate0@example.test', $html);
+        $this->assertStringContainsString('hr@spartaninfosoft.com', $html);
+        $this->assertStringContainsString('PDF attachment', $html);
+        $this->assertStringNotContainsString('reconstructed', $html);
+        $this->assertStringNotContainsString('New role', $html);
+    }
+
+    public function test_legacy_offer_activity_uses_exact_delivery_with_a_labeled_content_preview(): void
+    {
+        $candidate = $this->candidate();
+        $offer = $this->draft($candidate);
+        $service = app(OfferLetterService::class);
+        $service->send($this->admin, [$candidate->id], [$candidate->id => $offer->revision]);
+        $log = ActivityLog::where('event', 'offer.submitted')->firstOrFail();
+        $legacy = array_intersect_key($log->new_values, array_flip(['offer_id', 'revision', 'delivery_id']));
+        $log->forceFill(['new_values' => $legacy])->save();
+        $candidate->forceFill(['email' => 'changed@example.test'])->save();
+        $service->saveDraft($this->admin, $candidate, [...self::details(), 'revision' => $offer->revision, 'designation' => 'New role']);
+        $email = app(EmailActivityDetails::class)->forRecord($log);
+        $this->assertSame('candidate0@example.test', $email['candidate_email']);
+        $this->assertTrue($email['reconstructed']);
+        $this->assertStringNotContainsString('New role', $email['body']);
+        $html = view('filament.audit-details', ['record' => $log])->render();
+        $this->assertStringContainsString('Email content preview (reconstructed)', $html);
+        $this->assertStringContainsString('Not recorded in this activity entry', $html);
+        $this->assertStringContainsString('candidate0@example.test', $html);
+        $log->forceFill(['event' => 'offer.sending']);
+        $this->assertStringNotContainsString('Submitted to provider.', view('filament.audit-details', ['record' => $log])->render());
+        $log->forceFill(['new_values' => [...$legacy, 'delivery_id' => 999999]]);
+        $this->assertNull(app(EmailActivityDetails::class)->forRecord($log));
+        $this->assertStringContainsString('New values', view('filament.audit-details', ['record' => $log])->render());
+    }
+
+    public function test_admin_can_edit_and_send_a_submitted_offer_without_losing_history(): void
+    {
+        $candidate = $this->candidate();
+        $offer = $this->draft($candidate);
+        $service = app(OfferLetterService::class);
+        $oldRevision = $offer->revision;
+        $oldPath = $offer->pdf_path;
+        $oldHash = $offer->pdf_sha256;
+        $service->send($this->admin, [$candidate->id], [$candidate->id => $oldRevision]);
+        Livewire::test(ListOfferLetters::class)->callTableAction('prepareOffer', $candidate, [...self::details(), 'revision' => $oldRevision, 'annual_package' => '720000'])->assertHasNoActionErrors();
+        $offer->refresh();
+        $this->assertSame('draft', $offer->status);
+        $this->assertNotSame($oldRevision, $offer->revision);
+        $this->assertNotNull($offer->submitted_at);
+        $history = $offer->deliveries()->firstOrFail();
+        $this->assertSame($oldRevision, $history->revision);
+        $this->assertSame('636000.00', $history->details['annual_package']);
+        $this->assertSame($oldHash, hash('sha256', Storage::disk('private')->get($oldPath)));
+        $this->assertSame(1, app(DashboardService::class)->stats($this->admin)['Offer letters sent']);
+        try {
+            $service->resend($this->admin, $candidate->id, $oldRevision, (string) Str::uuid());
+            $this->fail('An old revision was resent.');
+        } catch (ValidationException) {
+            $this->assertCount(1, $this->transport->messages());
+        }
+        Livewire::test(ListOfferLetters::class)->callTableAction('sendOffer', $candidate, ['revision' => $offer->revision])->assertHasNoActionErrors();
+        $this->assertCount(2, $this->transport->messages());
+        $this->assertSame(2, $offer->deliveries()->where('status', 'submitted')->count());
+        $this->assertSame('720000.00', $offer->deliveries()->latest('id')->first()->details['annual_package']);
+        $this->assertSame(1, app(DashboardService::class)->stats($this->admin)['Offer letters sent']);
+    }
+
+    public function test_resend_action_reuses_saved_pdf_and_rejects_replayed_confirmation(): void
+    {
+        $candidate = $this->candidate();
+        $offer = $this->draft($candidate);
+        $service = app(OfferLetterService::class);
+        $service->send($this->admin, [$candidate->id], [$candidate->id => $offer->revision]);
+        $token = (string) Str::uuid();
+        Livewire::test(ListOfferLetters::class)->callTableAction('resendOffer', $candidate, ['revision' => $offer->revision, 'token' => $token])->assertHasNoActionErrors();
+        $this->assertCount(2, $this->transport->messages());
+        foreach ($this->transport->messages() as $message) {
+            $this->assertSame($offer->pdf_sha256, hash('sha256', $message->getOriginalMessage()->getAttachments()[0]->getBody()));
+        }
+        try {
+            $service->resend($this->admin, $candidate->id, $offer->revision, $token);
+            $this->fail('Duplicate resend accepted.');
+        } catch (ValidationException $exception) {
+            $this->assertStringContainsString('already been processed', $exception->getMessage());
+            $this->assertCount(2, $this->transport->messages());
+            $this->assertDatabaseCount('offer_letter_deliveries', 2);
+        }
+    }
+
+    public function test_hr_cannot_edit_or_resend_submitted_offers_or_send_their_revisions(): void
+    {
+        $candidate = $this->candidate();
+        $offer = $this->draft($candidate);
+        $service = app(OfferLetterService::class);
+        $service->send($this->admin, [$candidate->id], [$candidate->id => $offer->revision]);
+        $this->actingAs($this->hr);
+        Livewire::test(ListOfferLetters::class)->assertTableActionHidden('prepareOffer', $candidate)->assertTableActionHidden('resendOffer', $candidate);
+        foreach ([fn () => $service->saveDraft($this->hr, $candidate, [...self::details(), 'revision' => $offer->revision]), fn () => $service->resend($this->hr, $candidate->id, $offer->revision, (string) Str::uuid())] as $attempt) {
+            try {
+                $attempt();
+                $this->fail('HR accessed an admin-only operation.');
+            } catch (HttpException $exception) {
+                $this->assertSame(403, $exception->getStatusCode());
+            }
+        }
+        $offer = $service->saveDraft($this->admin, $candidate, [...self::details(), 'revision' => $offer->revision]);
+        Livewire::test(ListOfferLetters::class)->assertTableActionHidden('prepareOffer', $candidate)->assertTableActionHidden('sendOffer', $candidate);
+        try {
+            $service->send($this->hr, [$candidate->id], [$candidate->id => $offer->revision]);
+            $this->fail('HR sent a revised submitted offer.');
+        } catch (HttpException $exception) {
+            $this->assertSame(403, $exception->getStatusCode());
+            $this->assertCount(1, $this->transport->messages());
+        }
+    }
+
+    public function test_unconfirmed_resend_stays_locked_and_preserves_previous_submission_count(): void
+    {
+        $candidate = $this->candidate();
+        $offer = $this->draft($candidate);
+        $service = app(OfferLetterService::class);
+        $service->send($this->admin, [$candidate->id], [$candidate->id => $offer->revision]);
+        Event::listen(MessageSending::class, fn () => false);
+        $this->assertSame(['submitted' => 0, 'uncertain' => 1], $service->resend($this->admin, $candidate->id, $offer->revision, (string) Str::uuid()));
+        $this->assertSame('uncertain', $offer->fresh()->status);
+        $this->assertSame(1, $offer->deliveries()->where('status', 'submitted')->count());
+        $this->assertSame(1, $offer->deliveries()->where('status', 'uncertain')->count());
+        $this->assertSame(1, app(DashboardService::class)->stats($this->admin)['Offer letters sent']);
+        foreach ([fn () => $service->saveDraft($this->admin, $candidate, [...self::details(), 'revision' => $offer->revision]), fn () => $service->resend($this->admin, $candidate->id, $offer->revision, (string) Str::uuid())] as $attempt) {
+            try {
+                $attempt();
+                $this->fail('Unconfirmed offer was unlocked.');
+            } catch (ValidationException) {
+                $this->assertCount(1, $this->transport->messages());
+            }
+        }
+    }
+
+    public function test_offer_reports_filter_by_send_date_and_dashboard_counts_candidates_once(): void
+    {
+        $a = $this->candidate();
+        $b = $this->candidate(1);
+        $b->forceFill(['assigned_hr_id' => $this->admin->id])->save();
+        $c = $this->candidate(2);
+        $a->update(['entry_date' => today()->subMonths(2)->toDateString()]);
+        $service = app(OfferLetterService::class);
+        $first = $this->draft($a);
+        $second = $this->draft($b);
+        $this->draft($c);
+        $service->send($this->admin, [$a->id], [$a->id => $first->revision]);
+        $first->deliveries()->update(['submitted_at' => now()->subDays(2)]);
+        $service->resend($this->admin, $a->id, $first->revision, (string) Str::uuid());
+        $service->send($this->admin, [$b->id], [$b->id => $second->revision]);
+        $reports = app(ReportService::class);
+        $today = ['type' => 'offers', 'from' => today()->toDateString(), 'until' => today()->toDateString()];
+        $this->assertCount(3, iterator_to_array($reports->rows($this->admin, ['type' => 'offers'])));
+        $this->assertCount(2, iterator_to_array($reports->rows($this->admin, $today)));
+        $rows = iterator_to_array($reports->rows($this->admin, [...$today, 'assigned_hr_id' => $this->hr->id]));
+        $this->assertCount(1, $rows);
+        $this->assertSame($a->email, $rows[0]['Recipient']);
+        $this->assertCount(2, iterator_to_array($reports->rows($this->admin, ['type' => 'range', 'offer_sent' => 'sent'])));
+        $this->assertCount(1, iterator_to_array($reports->rows($this->admin, ['type' => 'range', 'offer_sent' => 'not_sent'])));
+        $this->assertSame(2, app(DashboardService::class)->stats($this->admin)['Offer letters sent']);
+        $this->assertSame(1, app(DashboardService::class)->stats($this->hr)['Offer letters sent']);
+        Livewire::test(Reports::class)->fillForm([...$today, 'offer_sent' => 'sent', 'assigned_hr_id' => $this->hr->id])->call('preview')->assertHasNoFormErrors()->assertSee($a->email)->assertDontSee($b->email);
+        $response = $reports->export($this->admin, [...$today, 'assigned_hr_id' => $this->hr->id]);
+        ob_start();
+        $response->sendContent();
+        $csv = ob_get_clean();
+        $this->assertStringContainsString($a->email, $csv);
+        $this->assertStringNotContainsString($b->email, $csv);
+        $b->delete();
+        $this->assertSame(1, app(DashboardService::class)->stats($this->admin)['Offer letters sent']);
+    }
+
+    public function test_delivery_history_migration_backfills_existing_offers(): void
+    {
+        $submitted = $this->draft($this->candidate());
+        $submitted->update(['status' => 'submitted', 'submitted_at' => now()->subDay()]);
+        $uncertain = $this->draft($this->candidate(1));
+        $uncertain->update(['status' => 'uncertain']);
+        $this->draft($this->candidate(2));
+        $migration = require database_path('migrations/2026_11_22_100000_create_offer_letter_deliveries_table.php');
+        $migration->down();
+        $migration->up();
+        $this->assertDatabaseCount('offer_letter_deliveries', 2);
+        $history = OfferLetterDelivery::where('offer_letter_id', $submitted->id)->firstOrFail();
+        $this->assertSame($submitted->pdf_path, $history->pdf_path);
+        $this->assertSame($submitted->details, $history->details);
+        $this->assertTrue($history->submitted_at->equalTo($submitted->submitted_at));
+        $this->assertNull($history->sent_by);
+        $this->assertSame(1, app(DashboardService::class)->stats($this->admin)['Offer letters sent']);
     }
 
     public function test_prepare_offer_prefills_editable_defaults_and_linked_dates(): void

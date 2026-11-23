@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Filament\Resources\CandidateResource\Pages\ListCandidates;
+use App\Filament\Resources\ActivityLogResource\Pages\ListActivityLogs;
+use App\Models\ActivityLog;
 use App\Models\Candidate;
 use App\Models\EmailTemplate;
 use App\Models\JobPosition;
@@ -145,6 +147,43 @@ class CandidateOutreachTest extends TestCase
             $this->assertCount(0, $this->transport->messages());
             $this->assertDatabaseCount('candidate_email_batches', 0);
         }
+    }
+
+    public function test_email_activity_keeps_recipient_and_content_snapshots_and_is_searchable_by_admin(): void
+    {
+        $candidate = $this->candidate(0);
+        $other = $this->candidate(1, 'second@example.test');
+        $data = [...$this->message(), 'body' => "Hello\n<script>alert('unsafe')</script>", 'body_format' => 'markdown'];
+        app(CandidateOutreachService::class)->email($this->admin, [$candidate->id, $other->id], $data);
+        $log = ActivityLog::where('event', 'candidate.email_submitted')->where('subject_id', $candidate->id)->firstOrFail();
+        $otherLog = ActivityLog::where('event', 'candidate.email_submitted')->where('subject_id', $other->id)->firstOrFail();
+        $candidate->forceFill(['email' => 'changed@example.test', 'full_name' => 'Changed name'])->save();
+        $this->assertSame('candidate@example.test', $log->new_values['candidate_email']);
+        $this->assertSame('Candidate 0', $log->new_values['candidate_name']);
+        $this->assertSame($data['body'], $log->new_values['body']);
+        $this->assertSame('markdown', $log->new_values['body_format']);
+        $this->assertSame('careers@spartaninfosoft.com', $log->new_values['from']);
+        $this->assertSame('careers@spartaninfosoft.com', $log->new_values['to']);
+        $this->assertSame('BCC', $log->new_values['recipient_type']);
+        $this->assertSame($data['token'], $log->new_values['batch']);
+        $this->assertSame($data['token'], $otherLog->new_values['batch']);
+        $this->assertSame('submitted', $log->new_values['status']);
+        $this->assertNotEmpty($log->new_values['submitted_at']);
+
+        $this->actingAs($this->admin);
+        $page = Livewire::test(ListActivityLogs::class)
+            ->filterTable('event', 'candidate.email_submitted')
+            ->searchTable('candidate@example.test')
+            ->assertCanSeeTableRecords([$log])->assertCanNotSeeTableRecords([$otherLog])
+            ->assertTableColumnStateSet('new_values.candidate_email', 'candidate@example.test', $log)
+            ->mountTableAction('details', $log);
+        $this->assertNotNull($page->instance()->getMountedAction());
+        $html = $page->instance()->getMountedAction()->getModalContent()->render();
+        $this->assertStringContainsString('Email content', $html);
+        $this->assertStringContainsString('candidate@example.test', $html);
+        $this->assertStringContainsString('&lt;script&gt;', $html);
+        $this->assertStringNotContainsString('<script>', $html);
+        $this->actingAs($this->hr)->get('/admin/activity-logs')->assertForbidden();
     }
 
     public function test_configured_company_to_overrides_sender_and_invalid_to_blocks_delivery(): void
@@ -334,6 +373,7 @@ class CandidateOutreachTest extends TestCase
         $this->assertNull($round->scheduled_at);
         $this->assertNull($a->fresh()->last_email_sent_at);
         $this->assertNull($a->fresh()->round_one_email_sent_at);
+        $this->assertDatabaseMissing('activity_logs', ['event' => 'candidate.email_submitted', 'subject_id' => $a->id]);
     }
 
     public function test_round_one_invitation_schedules_every_selected_candidate_after_delivery(): void
@@ -411,6 +451,7 @@ class CandidateOutreachTest extends TestCase
             $this->assertDatabaseHas('candidate_email_batches', ['token' => $data['token'], 'status' => 'submitted']);
             $this->assertSame('Pending', $candidate->interviewRounds()->where('round_number', 1)->first()->status);
             $this->assertNotNull($candidate->fresh()->last_email_sent_at);
+            $this->assertDatabaseHas('activity_logs', ['event' => 'candidate.email_submitted', 'subject_id' => $candidate->id]);
         }
         try {
             app(CandidateOutreachService::class)->email($this->admin, [$candidate->id], $data);

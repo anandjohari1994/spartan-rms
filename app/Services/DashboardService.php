@@ -23,6 +23,7 @@ class DashboardService
             'Unique candidates called today' => (int) $calls->unique_candidates, 'Unsuccessful calls today' => (int) $calls->total - (int) $calls->connected,
             'Interested candidates' => (int) $c->interested, 'Round 1 passed' => (int) ($rounds[1] ?? 0), 'Round 2 passed' => (int) ($rounds[2] ?? 0),
             'Round 3 passed' => (int) ($rounds[3] ?? 0), 'Final selections' => (int) $c->selected, 'Pending follow-ups' => (int) $follow->pending,
+            'Offer letters sent' => Candidate::visibleTo($user)->whereHas('offerLetter.deliveries', fn ($delivery) => $delivery->where('status', 'submitted'))->count(),
             "Today's follow-ups" => (int) $follow->today, 'Overdue follow-ups' => (int) $follow->overdue,
         ];
         if ($user->isAdmin()) {

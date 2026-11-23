@@ -17,4 +17,9 @@ class OfferLetter extends Model
     {
         return $this->belongsTo(Candidate::class);
     }
+
+    public function deliveries()
+    {
+        return $this->hasMany(OfferLetterDelivery::class);
+    }
 }

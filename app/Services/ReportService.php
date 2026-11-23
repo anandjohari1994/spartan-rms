@@ -6,6 +6,7 @@ use App\Models\CallLog;
 use App\Models\Candidate;
 use App\Models\FollowUp;
 use App\Models\InterviewRound;
+use App\Models\OfferLetterDelivery;
 use App\Models\User;
 use App\Support\Recruitment;
 use Carbon\Carbon;
@@ -14,7 +15,7 @@ use Illuminate\Validation\Rule;
 
 class ReportService
 {
-    public const TYPES = ['daily' => 'Daily candidate registration', 'hr' => 'HR-wise candidates', 'calls' => 'Calling performance', 'interviews' => 'Interview round status', 'selected' => 'Selected candidates', 'followups' => 'Pending follow-ups', 'positions' => 'Job position recruitment', 'range' => 'Date range recruitment'];
+    public const TYPES = ['daily' => 'Daily candidate registration', 'hr' => 'HR-wise candidates', 'calls' => 'Calling performance', 'interviews' => 'Interview round status', 'selected' => 'Selected candidates', 'followups' => 'Pending follow-ups', 'positions' => 'Job position recruitment', 'range' => 'Date range recruitment', 'offers' => 'Offer letter send history'];
 
     public function validate(User $actor, array $filters, bool $export = false): array
     {
@@ -24,6 +25,7 @@ class ReportService
             'type' => ['required', Rule::in(array_keys(self::TYPES))], 'from' => 'nullable|date', 'until' => 'nullable|date|after_or_equal:from',
             'assigned_hr_id' => 'nullable|integer|exists:users,id', 'job_position_id' => 'nullable|integer|exists:job_positions,id', 'location' => 'nullable|string|max:120',
             'recruitment_status' => ['nullable', Rule::in(Recruitment::STATUSES)], 'calling_status' => ['nullable', Rule::in(Recruitment::CALLS)], 'round_number' => 'nullable|integer|between:1,3',
+            'offer_sent' => ['nullable', Rule::in(['sent', 'not_sent'])],
         ])->validate();
     }
 
@@ -41,6 +43,10 @@ class ReportService
         if (filled($f['round_number'] ?? null)) {
             $q->whereHas('interviewRounds', fn ($q) => $q->where('round_number', $f['round_number'])->whereNotIn('status', ['Not Started', 'Cancelled']));
         }
+        if (filled($f['offer_sent'] ?? null)) {
+            $sent = fn ($offer) => $offer->whereHas('deliveries', fn ($delivery) => $delivery->where('status', 'submitted'));
+            $f['offer_sent'] === 'sent' ? $q->whereHas('offerLetter', $sent) : $q->whereDoesntHave('offerLetter', $sent);
+        }
 
         return $q;
     }
@@ -55,7 +61,11 @@ class ReportService
         $f = $this->validate($actor, $filters);
         $type = $f['type'];
         $candidates = $this->candidates($actor, $f);
-        if ($type === 'calls') {
+        if ($type === 'offers') {
+            $q = $this->dates(OfferLetterDelivery::where('status', 'submitted')->whereHas('offerLetter', fn ($offer) => $offer->whereIn('candidate_id', $candidates->select('id'))), 'submitted_at', $f)
+                ->with(['offerLetter.candidate.assignedHr', 'sender'])->orderBy('id');
+            $map = fn ($r) => ['Send ID' => $r->id, 'Code' => $r->offerLetter?->candidate?->candidate_code, 'Candidate' => $r->details['candidate_name'] ?? $r->offerLetter?->candidate?->full_name, 'Recipient' => $r->recipient, 'Position' => $r->details['designation'] ?? '', 'HR' => $r->offerLetter?->candidate?->assignedHr?->name, 'Annual CTC (INR)' => $r->details['annual_package'] ?? '', 'Submitted at' => $r->submitted_at?->format('Y-m-d H:i:s'), 'Sent by' => $r->sender?->name ?? 'Not recorded (legacy)', 'Revision' => $r->revision, 'Status' => 'Submitted to provider'];
+        } elseif ($type === 'calls') {
             $q = $this->dates(CallLog::whereIn('candidate_id', $candidates->select('id')), 'called_at', $f);
             if (filled($f['calling_status'] ?? null)) {
                 $q->where('call_status', $f['calling_status']);

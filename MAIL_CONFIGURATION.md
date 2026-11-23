@@ -16,6 +16,8 @@ The local environment's existing HR SMTP settings were moved to `HR_MAIL_*`. Car
 
 `MAIL_TO_ADDRESS` remains an optional company To mailbox for candidate BCC emails. When blank, To uses the selected sender. The admin preview shows both From and To. Candidate recipients stay in BCC; offer letters are addressed individually to each candidate.
 
+For new candidate email submissions, Administration → Activity logs records each candidate's name and email address, From and company To addresses, rendered subject and message source, body format, sending admin, submission time, and batch reference. Filter Activity type to Candidate email submitted and use Details to read the content. Search by candidate name, email, or subject. These are snapshots, so later candidate or template edits do not change them. Submission means the provider accepted the message, not confirmed inbox delivery. The email audit persists even if subsequent interview scheduling fails. Older activity entries retain their original recorded fields. No extra To/CC recipient is needed for tracking, and candidate addresses remain private in BCC.
+
 After environment changes, run `php artisan config:clear` for local development, or rebuild the production configuration with `php artisan config:cache`. Restart long-running queue workers if used. No database migration is required. Verify delivery only after all selected accounts are configured.
 
 Tests use in-memory transports and do not send real email:

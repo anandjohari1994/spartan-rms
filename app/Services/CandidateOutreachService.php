@@ -159,8 +159,24 @@ class CandidateOutreachService
             throw ValidationException::withMessages(['body' => "Email attempt #{$attemptId}: Delivery could not be confirmed. The original error is in storage/logs/laravel.log. Check the mail provider before retrying; some recipients may have been accepted."]);
         }
         $submittedAt = now();
-        DB::transaction(function () use ($records, $template, $values, $submittedAt) {
+        DB::transaction(function () use ($actor, $records, $template, $values, $submittedAt, $mailer, $to) {
             DB::table('candidate_email_batches')->where('token', $values['token'])->update(['status' => 'submitted', 'updated_at' => $submittedAt]);
+            foreach ($records as $record) {
+                app(AuditService::class)->record($actor, $record, 'candidate.email_submitted', [], [
+                    'batch' => $values['token'],
+                    'candidate_name' => $record->full_name,
+                    'candidate_email' => strtolower(trim($record->email)),
+                    'from' => self::fromAddress($template),
+                    'to' => $to,
+                    'recipient_type' => 'BCC',
+                    'mailer' => $mailer,
+                    'subject' => $values['subject'],
+                    'body' => $values['body'],
+                    'body_format' => $values['body_format'] ?? 'plain',
+                    'status' => 'submitted',
+                    'submitted_at' => $submittedAt->toIso8601String(),
+                ]);
+            }
             $fields = ['last_email_sent_at'];
             if ($template?->round_number === 1 && $template->purpose === 'Invitation') {
                 $fields[] = 'round_one_email_sent_at';
@@ -174,7 +190,6 @@ class CandidateOutreachService
         try {
             DB::transaction(function () use ($actor, $records, $template, $values, $submittedAt) {
                 foreach ($records as $record) {
-                    app(AuditService::class)->record($actor, $record, 'candidate.email_submitted', [], ['batch' => $values['token'], 'subject' => $values['subject']]);
                     if ($template?->round_number !== 1 || $template->purpose !== 'Invitation') {
                         continue;
                     }

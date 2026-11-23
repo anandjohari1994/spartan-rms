@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Mail\CandidateOfferLetter;
 use App\Models\Candidate;
 use App\Models\OfferLetter;
+use App\Models\OfferLetterDelivery;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -114,9 +115,12 @@ class OfferLetterService
             $candidate = Candidate::whereKey($candidate->id)->lockForUpdate()->firstOrFail();
             $this->authorize($actor, $candidate);
             $this->eligible($candidate);
-            $existing = $candidate->offerLetter()->first();
-            if ($existing && ($existing->status !== 'draft' || ($data['revision'] ?? '') !== $existing->revision)) {
-                throw ValidationException::withMessages(['offer' => 'This offer has changed or has already been sent. Refresh before continuing. Sent or unconfirmed offers cannot be overwritten.']);
+            $existing = $candidate->offerLetter()->lockForUpdate()->first();
+            if ($existing && ($existing->submitted_at || $existing->status === 'submitted')) {
+                abort_unless($actor->isAdmin(), 403);
+            }
+            if ($existing && (! in_array($existing->status, ['draft', 'submitted']) || ($data['revision'] ?? '') !== $existing->revision)) {
+                throw ValidationException::withMessages(['offer' => 'This offer has changed or delivery is unconfirmed. Refresh before continuing. Sending and unconfirmed offers cannot be edited.']);
             }
             $rules = ['employment_type' => ['required', Rule::in(['Full-Time', 'Contractual', 'Other'])], 'probation_months' => 'required|integer|min:0|max:36', 'salary_payment_day' => 'required|integer|min:1|max:31', 'optional_clause' => ['required', Rule::in(['include', 'omit'])]];
             foreach (self::TEXT_FIELDS as $field => $label) {
@@ -182,13 +186,26 @@ class OfferLetterService
     /** Preflight the entire selection, then reserve each immutable revision before any mail is sent. */
     public function send(User $actor, array $ids, array $revisions): array
     {
+        return $this->deliver($actor, $ids, $revisions);
+    }
+
+    public function resend(User $actor, int $candidateId, string $revision, string $token): array
+    {
+        abort_unless($actor->isAdmin(), 403);
+        Validator::make(['token' => $token], ['token' => 'required|uuid'])->validate();
+
+        return $this->deliver($actor, [$candidateId], [$candidateId => $revision], $token);
+    }
+
+    private function deliver(User $actor, array $ids, array $revisions, ?string $resendToken = null): array
+    {
         abort_unless($actor->canEmailCandidates(), 403);
         Validator::make(['candidates' => $ids], ['candidates' => 'required|array|min:1|max:25', 'candidates.*' => 'required|integer|distinct'])->validate();
         $mailer = 'hr';
         if (! in_array(config("mail.mailers.{$mailer}.transport"), ['smtp', 'sendmail', 'ses', 'ses-v2', 'mailgun', 'postmark', 'resend'], true)) {
             throw ValidationException::withMessages(['offer' => 'Configure SMTP delivery for the HR mail account before sending offer letters.']);
         }
-        $offers = DB::transaction(function () use ($actor, $ids, $revisions) {
+        $attempts = DB::transaction(function () use ($actor, $ids, $revisions, $resendToken) {
             $candidates = Candidate::whereKey($ids)->orderBy('id')->lockForUpdate()->get();
             if ($candidates->count() !== count($ids)) {
                 throw ValidationException::withMessages(['offer' => 'Nothing sent. A candidate was deleted or is missing. Refresh your selection.']);
@@ -198,8 +215,11 @@ class OfferLetterService
                 $this->authorize($actor, $candidate);
                 $this->eligible($candidate);
                 $offer = $candidate->offerLetter()->lockForUpdate()->first();
-                if (! $offer || $offer->status !== 'draft' || ($revisions[$candidate->id] ?? '') !== $offer->revision) {
-                    throw ValidationException::withMessages(['offer' => "Nothing sent. {$candidate->candidate_code}: save and review the current draft. Sent, changed, or unconfirmed offers cannot be sent again."]);
+                if (! $offer || $offer->status !== ($resendToken ? 'submitted' : 'draft') || ($revisions[$candidate->id] ?? '') !== $offer->revision) {
+                    throw ValidationException::withMessages(['offer' => "Nothing sent. {$candidate->candidate_code}: refresh and review the current offer. Use Resend offer for a submitted letter. Changed or unconfirmed offers cannot be sent."]);
+                }
+                if ($offer->submitted_at || $resendToken) {
+                    abort_unless($actor->isAdmin(), 403);
                 }
                 if ($candidate->full_name !== $offer->details['candidate_name'] || trim((string) $candidate->email) !== $offer->recipient) {
                     throw ValidationException::withMessages(['offer' => "Nothing sent. {$candidate->candidate_code}: name or email changed. Save and preview a new draft."]);
@@ -212,15 +232,25 @@ class OfferLetterService
                 $this->pdf($offer);
                 $offers[] = $offer;
             }
+            if ($resendToken && OfferLetterDelivery::where('token', $resendToken)->exists()) {
+                throw ValidationException::withMessages(['offer' => 'This resend request has already been processed. No second email was sent. Refresh to see its status.']);
+            }
+            $attempts = [];
             foreach ($offers as $offer) {
+                $attempt = $offer->deliveries()->create([
+                    'token' => $resendToken ?? (string) Str::uuid(), 'revision' => $offer->revision,
+                    'sent_by' => $actor->id, 'recipient' => $offer->recipient, 'details' => $offer->details,
+                    'pdf_path' => $offer->pdf_path, 'pdf_sha256' => $offer->pdf_sha256, 'status' => 'sending',
+                ]);
+                $attempts[] = [$offer, $attempt];
                 $offer->update(['status' => 'sending']);
-                app(AuditService::class)->record($actor, $offer->candidate, 'offer.sending', [], ['offer_id' => $offer->id, 'revision' => $offer->revision]);
+                app(AuditService::class)->record($actor, $offer->candidate, $resendToken ? 'offer.resending' : 'offer.sending', [], ['offer_id' => $offer->id, 'revision' => $offer->revision, 'delivery_id' => $attempt->id]);
             }
 
-            return $offers;
+            return $attempts;
         });
         $result = ['submitted' => 0, 'uncertain' => 0];
-        foreach ($offers as $offer) {
+        foreach ($attempts as [$offer, $attempt]) {
             try {
                 $sent = Mail::mailer($mailer)->to($offer->recipient)->send(new CandidateOfferLetter($offer->details, $this->pdf($offer), 'conditional-offer-'.$offer->candidate_id.'.pdf'));
                 if ($sent === null) {
@@ -228,15 +258,35 @@ class OfferLetterService
                 }
             } catch (Throwable $exception) {
                 report($exception);
-                $offer->update(['status' => 'uncertain']);
-                app(AuditService::class)->record($actor, $offer->candidate, 'offer.delivery_unconfirmed', [], ['offer_id' => $offer->id]);
+                DB::transaction(function () use ($offer, $attempt) {
+                    $offer->update(['status' => 'uncertain']);
+                    $attempt->update(['status' => 'uncertain']);
+                });
+                app(AuditService::class)->record($actor, $offer->candidate, 'offer.delivery_unconfirmed', [], ['offer_id' => $offer->id, 'delivery_id' => $attempt->id]);
                 $result['uncertain']++;
 
                 continue;
             }
             // Never roll an external delivery back to a sendable draft.
-            $offer->update(['status' => 'submitted', 'submitted_at' => now()]);
-            app(AuditService::class)->record($actor, $offer->candidate, 'offer.submitted', [], ['offer_id' => $offer->id, 'revision' => $offer->revision]);
+            DB::transaction(function () use ($offer, $attempt) {
+                $submittedAt = now();
+                $offer->update(['status' => 'submitted', 'submitted_at' => $submittedAt]);
+                $attempt->update(['status' => 'submitted', 'submitted_at' => $submittedAt]);
+            });
+            $message = $sent->getSymfonySentMessage()->getOriginalMessage();
+            app(AuditService::class)->record($actor, $offer->candidate, 'offer.submitted', [], [
+                'offer_id' => $offer->id, 'revision' => $attempt->revision, 'delivery_id' => $attempt->id,
+                'candidate_name' => $attempt->details['candidate_name'],
+                'candidate_email' => $attempt->recipient,
+                'from' => implode(', ', array_map(fn ($address) => $address->getAddress(), $message->getFrom())),
+                'to' => implode(', ', array_map(fn ($address) => $address->getAddress(), $message->getTo())),
+                'recipient_type' => 'To', 'mailer' => $mailer,
+                'subject' => $message->getSubject(), 'body' => $message->getTextBody(), 'body_format' => 'plain',
+                'status' => 'submitted', 'submitted_at' => $attempt->submitted_at->toIso8601String(),
+                'message_id' => $sent->getMessageId(),
+                'attachment' => 'conditional-offer-'.$offer->candidate_id.'.pdf',
+                'attachment_sha256' => $attempt->pdf_sha256,
+            ]);
             $result['submitted']++;
         }
 

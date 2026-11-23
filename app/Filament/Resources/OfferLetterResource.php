@@ -27,6 +27,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 class OfferLetterResource extends Resource
 {
@@ -133,14 +134,18 @@ class OfferLetterResource extends Resource
                     ->color(fn (?string $state) => match ($state) {
                         'submitted' => 'success', 'draft' => 'info', default => 'warning'
                     }),
-                TextColumn::make('offerLetter.submitted_at')->label('Submitted at')->dateTime()->placeholder('Not sent'),
+                TextColumn::make('offerLetter.submitted_at')->label('Last submitted at')->dateTime()->placeholder('Not sent'),
             ])->defaultSort('updated_at', 'desc')->recordUrl(null)
             ->filters([
                 SelectFilter::make('offer_status')->label('Offer status')->options(['not_prepared' => 'Not prepared', 'draft' => 'Draft ready', 'submitted' => 'Submitted to provider', 'uncertain' => 'Delivery unconfirmed', 'sending' => 'Sending / check provider'])
                     ->query(fn (Builder $query, array $data) => $query->when($data['value'] ?? null, fn ($query, $status) => $status === 'not_prepared' ? $query->whereDoesntHave('offerLetter') : $query->whereHas('offerLetter', fn ($offer) => $offer->where('status', $status)))),
             ])->recordActions([
-                Action::make('prepareOffer')->label(fn (Candidate $record) => $record->offerLetter ? 'Edit draft' : 'Prepare offer')->icon('heroicon-o-pencil-square')
-                    ->visible(fn (Candidate $record) => ! $record->offerLetter || $record->offerLetter->status === 'draft')
+                Action::make('prepareOffer')->label(fn (Candidate $record) => $record->offerLetter?->status === 'submitted' ? 'Edit sent offer' : ($record->offerLetter ? 'Edit draft' : 'Prepare offer'))->icon('heroicon-o-pencil-square')
+                    ->visible(function (Candidate $record) {
+                        $offer = $record->offerLetter;
+
+                        return ! $offer || ($offer->status === 'draft' && (! $offer->submitted_at || auth()->user()->isAdmin())) || ($offer->status === 'submitted' && auth()->user()->isAdmin());
+                    })
                     ->modalHeading(fn (Candidate $record) => 'Offer letter - '.$record->full_name)->modalWidth('5xl')->modalSubmitActionLabel('Save draft PDF')
                     ->fillForm(fn (Candidate $record) => [...app(OfferLetterService::class)->defaults($record), 'revision' => $record->offerLetter?->revision])
                     ->schema(static::draftFields())
@@ -150,14 +155,26 @@ class OfferLetterResource extends Resource
                     }),
                 Action::make('previewOffer')->label('Preview')->icon('heroicon-o-eye')->visible(fn (Candidate $record) => (bool) $record->offerLetter)
                     ->url(fn (Candidate $record) => route('offer-letters.preview', $record))->openUrlInNewTab(),
-                Action::make('sendOffer')->label('Send offer')->icon('heroicon-o-paper-airplane')->color('success')
-                    ->visible(fn (Candidate $record) => $record->offerLetter?->status === 'draft')
+                Action::make('sendOffer')->label(fn (Candidate $record) => $record->offerLetter?->submitted_at ? 'Send revised offer' : 'Send offer')->icon('heroicon-o-paper-airplane')->color('success')
+                    ->visible(fn (Candidate $record) => $record->offerLetter?->status === 'draft' && (! $record->offerLetter->submitted_at || auth()->user()->isAdmin()))
                     ->requiresConfirmation()->modalHeading('Send conditional offer letter')
                     ->modalDescription(fn (Candidate $record) => 'Send the saved PDF to '.$record->email.'? Please preview the letter and confirm its terms first.')
                     ->schema([Hidden::make('revision')->default(fn (Candidate $record) => $record->offerLetter?->revision)])
                     ->databaseTransaction(false)
                     ->action(function (Candidate $record, array $data, Schema $schema) {
                         $result = ActionFeedback::run($schema, fn () => app(OfferLetterService::class)->send(auth()->user(), [$record->id], [$record->id => $data['revision']]));
+                        static::notifyDelivery($result);
+                    }),
+                Action::make('resendOffer')->label('Resend offer')->icon('heroicon-o-arrow-path')->color('warning')
+                    ->visible(fn (Candidate $record) => auth()->user()->isAdmin() && $record->offerLetter?->status === 'submitted')
+                    ->requiresConfirmation()->modalHeading('Resend submitted offer letter')
+                    ->modalDescription(fn (Candidate $record) => 'Send the saved PDF again to '.$record->email.'? To change its terms, cancel and choose Edit sent offer, save the draft, and preview it first.')
+                    ->schema([
+                        Hidden::make('revision')->default(fn (Candidate $record) => $record->offerLetter?->revision),
+                        Hidden::make('token')->default(fn () => (string) Str::uuid()),
+                    ])->databaseTransaction(false)
+                    ->action(function (Candidate $record, array $data, Schema $schema) {
+                        $result = ActionFeedback::run($schema, fn () => app(OfferLetterService::class)->resend(auth()->user(), $record->id, $data['revision'], $data['token']));
                         static::notifyDelivery($result);
                     }),
             ])->toolbarActions([
