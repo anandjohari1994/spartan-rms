@@ -73,8 +73,7 @@ class OfferLetterTest extends TestCase
             ...config('offer_letters.defaults'),
             'reference' => 'SI/OFFER/2026/001', 'address_line_1' => '12, Lotus Apartments', 'address_line_2' => 'Kalyani Nagar, Pune', 'state' => 'Maharashtra', 'pin_code' => '411014',
             'designation' => 'Software Engineer', 'department' => 'Engineering', 'work_location' => 'Pune', 'employment_type' => 'Full-Time',
-            'letter_date' => today()->toDateString(), 'joining_date' => today()->addDays(20)->toDateString(), 'commencement_date' => today()->addDays(20)->toDateString(), 'probation_months' => 6,
-            'document_deadline' => today()->addDays(10)->toDateString(), 'valid_until' => today()->addDays(7)->toDateString(), 'acceptance_deadline' => today()->addDays(7)->toDateString(),
+            'letter_date' => today()->toDateString(), 'joining_date' => today()->addDays(20)->toDateString(), 'probation_months' => 6,
             'annual_package' => '636000.00',
             'other_label' => 'Other allowance', 'salary_payment_day' => 7, 'signatory_name' => 'Ananya Sharma', 'signatory_designation' => 'HR Manager', 'optional_clause' => 'include',
         ];
@@ -311,7 +310,7 @@ class OfferLetterTest extends TestCase
         $this->assertSame(1, app(DashboardService::class)->stats($this->admin)['Offer letters sent']);
     }
 
-    public function test_prepare_offer_prefills_editable_defaults_and_linked_dates(): void
+    public function test_prepare_offer_prefills_editable_defaults_without_removed_dates(): void
     {
         $candidate = $this->candidate();
         $page = Livewire::test(ListOfferLetters::class)->mountTableAction('prepareOffer', $candidate);
@@ -319,42 +318,30 @@ class OfferLetterTest extends TestCase
             $page->assertSet('mountedActions.0.data.'.$key, $value);
         }
         $page->assertSet('mountedActions.0.data.letter_date', today()->toDateString());
-        $page->set('mountedActions.0.data.joining_date', '2026-12-07'); // Monday -> Friday
+        $this->assertSame(['letter_date', 'joining_date'], array_keys(OfferLetterService::DATE_FIELDS));
         foreach (['commencement_date', 'document_deadline', 'valid_until', 'acceptance_deadline'] as $key) {
-            $page->assertSet('mountedActions.0.data.'.$key, '2026-12-04');
+            $this->assertArrayNotHasKey($key, $page->get('mountedActions')[0]['data']);
         }
-        $page->set('mountedActions.0.data.joining_date', '2026-12-08');
-        foreach (['commencement_date', 'document_deadline', 'valid_until', 'acceptance_deadline'] as $key) {
-            $page->assertSet('mountedActions.0.data.'.$key, '2026-12-07');
-        }
-        $page->set('mountedActions.0.data.document_deadline', '2026-12-03');
-        $page->set('mountedActions.0.data.commencement_date', '2026-12-04')
-            ->assertSet('mountedActions.0.data.document_deadline', '2026-12-03')
-            ->assertSet('mountedActions.0.data.valid_until', '2026-12-04')
-            ->assertSet('mountedActions.0.data.acceptance_deadline', '2026-12-04');
-        $page->set('mountedActions.0.data.valid_until', '2026-12-03')
-            ->assertSet('mountedActions.0.data.acceptance_deadline', '2026-12-03');
-        $page->set('mountedActions.0.data.acceptance_deadline', '2026-12-02');
-        $page->set('mountedActions.0.data.valid_until', '2026-12-04')
-            ->assertSet('mountedActions.0.data.acceptance_deadline', '2026-12-02');
-        $page->set('mountedActions.0.data.joining_date', '2026-12-09')
-            ->assertSet('mountedActions.0.data.commencement_date', '2026-12-04');
         $page->set('mountedActions.0.data.annual_package', '500000')
             ->set('mountedActions.0.data.department', 'Quality Assurance')
             ->assertSet('mountedActions.0.data.annual_package', '500000')
             ->assertSet('mountedActions.0.data.department', 'Quality Assurance');
     }
 
-    public function test_previous_business_day_skips_weekends_and_month_year_boundaries(): void
+    public function test_new_offers_ignore_obsolete_deadlines_and_use_receipt_based_acceptance(): void
     {
-        foreach (['2026-12-07' => '2026-12-04', '2026-12-06' => '2026-12-04', '2026-12-05' => '2026-12-04', '2026-12-08' => '2026-12-07', '2027-01-01' => '2026-12-31', '2027-03-01' => '2027-02-26'] as $joining => $expected) {
-            $this->assertSame($expected, OfferLetterService::previousBusinessDay($joining));
+        $candidate = $this->candidate();
+        $oldDates = array_fill_keys(['commencement_date', 'document_deadline', 'valid_until', 'acceptance_deadline'], '2020-01-01');
+        $offer = app(OfferLetterService::class)->saveDraft($this->admin, $candidate, [...self::details(), ...$oldDates]);
+        foreach (array_keys($oldDates) as $key) {
+            $this->assertArrayNotHasKey($key, $offer->details);
         }
-        $this->assertNull(OfferLetterService::previousBusinessDay(null));
-        $this->assertNull(OfferLetterService::previousBusinessDay('not-a-date'));
-        $this->assertNull(OfferLetterService::previousBusinessDay('2026-02-30'));
-        $linked = array_fill_keys(['commencement_date', 'document_deadline', 'valid_until', 'acceptance_deadline'], '2026-12-07');
-        $this->assertSame(array_fill_keys(array_keys($linked), null), OfferLetterService::dependentDates('joining_date', null, '2026-12-08', $linked));
+        $this->assertSame(2, $offer->details['offer_terms_version']);
+        $this->assertSame(1, app(OfferLetterService::class)->send($this->admin, [$candidate->id], [$candidate->id => $offer->revision])['submitted']);
+        $body = $this->transport->messages()->first()->getOriginalMessage()->getTextBody();
+        $this->assertStringContainsString('within 24 hours of receiving it', $body);
+        $this->assertStringNotContainsString('on or before', $body);
+        $this->assertSame(config('offer_letters.defaults.leave_policy'), $offer->details['leave_policy']);
     }
 
     public function test_saved_custom_values_survive_reopening_and_terms_are_stored(): void
@@ -470,10 +457,10 @@ class OfferLetterTest extends TestCase
         foreach (['email', 'revision', 'expired', 'tampered'] as $scenario) {
             $candidate->update(['email' => $scenario === 'email' ? 'changed@example.test' : 'candidate0@example.test']);
             if ($scenario === 'expired') {
-                $offer->update(['details' => [...$offer->details, 'valid_until' => today()->subDay()->toDateString()]]);
+                $offer->update(['details' => [...$offer->details, 'offer_terms_version' => 1, 'valid_until' => today()->subDay()->toDateString()]]);
             }
             if ($scenario === 'tampered') {
-                $offer->update(['details' => self::details() + ['candidate_name' => $candidate->full_name]]);
+                $offer->update(['details' => self::details() + ['candidate_name' => $candidate->full_name, 'offer_terms_version' => 2]]);
                 Storage::disk('private')->put($offer->pdf_path, 'broken');
             }
             try {

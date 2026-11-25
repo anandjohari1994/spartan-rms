@@ -76,28 +76,18 @@ p(intro)
 h('1. Position & Reporting')
 details_table([('Designation:', '[designation]'), ('Department:', '[department]'), ('Work Location:', '[work_location]'), ('Employment Type:', '[employment_type]')])
 h('2. Joining Details')
-details_table([('Proposed Date of Joining:', '[joining_date]'), ('Employment Commencement Date:', '[commencement_date]'), ('Probation Period:', '[months] months from the Employment Commencement Date')])
-story.append(Spacer(1, 8))
-onboarding = original_clause('3.1').split('[Document Submission Date]:', 1)[0]+'[document_deadline]:'
-clause('2.1', onboarding, 'Onboarding and Documentation.')
-for item in [
-    'Completed Company joining and employee information forms;',
-    'Identity and address proof, as specified by HR;',
-    'Educational certificates and mark sheets;',
-    'Previous employment records, including relieving and experience letters, if applicable;',
-    'Passport-size photographs and bank account details for payroll; and',
-    'Any other document reasonably requested by the HR Department.',
-]:
-    p(escape(item), ParagraphStyle('Bullet', parent=body, leftIndent=26.5, firstLineIndent=0, bulletIndent=13, spaceAfter=4, bulletFontName='Carlito'))
-    story[-1].bulletText = '\u2022'
-clause('2.2', original_clause('3.2'))
+details_table([('Proposed Date of Joining:', '[joining_date]'), ('Probation Period:', '[months] months from the date of joining')])
+clause('2.1', original_clause('3.2'))
 
 h('3. Compensation')
 for i in range(1, 6):
     text = original_clause(f'4.{i}').replace('Clause 3', 'Clause 2')
     for old, new in [('Annual CTC','annual_ctc'), ('Monthly Gross Salary','monthly_gross'), ('Salary Payment Date','salary_payment_day')]:
         text = text.replace('['+old+']','['+new+']')
+    if i == 3:
+        text = 'Your salary shall accrue from your actual date of joining, in accordance with this letter and the Employment Agreement.'
     clause(f'3.{i}', text)
+clause('3.6', 'Your estimated monthly Net Salary after employee PF is INR [net_monthly]. TDS, Professional Tax and other applicable payroll deductions are not included in this estimate. Refer to Annexure A.')
 
 h('4. Pending Client Interview & Deployment Conditions')
 clause('4.1', original_clause('1.1')+' You will be presented to the client for final evaluation as per the client\'s hiring requirements.')
@@ -114,7 +104,7 @@ for i in range(1, 5):
 h('6. Conditions of Employment')
 p('This offer and your continued employment are subject to the following:')
 for i in range(1, 8):
-    text = original_clause(f'7.{i}')
+    text = original_clause(f'7.{i}').replace('the Employment Commencement Date', 'your date of joining')
     label = text.split(':', 1)[0]+':' if ':' in text else 'Employment Agreement:'
     clause(f'6.{i}', text, label)
 
@@ -137,13 +127,40 @@ for number, label, text in [
 ]:
     clause(number, label+' '+text, label)
 
+h('6.17 TRAINING AND DEVELOPMENT')
+p('During the course of your employment, the Company may, at its discretion, provide or require you to undergo training programs to enhance your skills, performance, or compliance with operational and regulatory standards. You agree to participate in such training as and when required, and to adhere to all policies, procedures, and terms applicable to such training, including any service commitments, cost recovery, or certification requirements, as may be communicated by the Company from time to time. You will also undergo mandatory training programmes on a regular basis every year. Please complete the training programme within the timelines as communicated from time to time.')
+h('6.18 JOB ROLES & RESPONSIBILITIES')
+p('You shall be responsible for the performance of the functions expected of your role and any additional functions and duties that may be assigned to you in connection with the business and operations of the Company. You shall use the best of your efforts to promote, develop and extend the business of the Company and comply with the directions and regulations of the Company at all times, and in all respects.')
+h('6.19 ASSIGNMENT')
+p('You shall acknowledge that the services to be rendered by you are unique and personal. During your service with the Company, you shall not assign any of the rights or delegate any of the duties or obligations under this Agreement without the prior written consent of the Company.')
+h('6.20 TERMINATION')
+for index, text in enumerate([
+    'During probation, either the employee or company may terminate employment by serving the notice period as per company policy.',
+    'Employees must provide written notice or pay basic salary in lieu of the applicable notice period.',
+    'The company may terminate employment by providing the required notice period or basic salary in lieu of notice.',
+    'The company may terminate employment immediately in cases of misconduct, fraud, policy violations, dishonesty, negligence, or other serious violations.',
+    'Absence without prior approval for five consecutive working days may result in termination.',
+    'Upon termination, employees must return all company assets, documents, records, and confidential information.',
+], 1):
+    p(str(index)+'. '+escape(text))
+h('6.21 NO HIRE OF EMPLOYEES')
+p('During the period commencing on the date you join the Company and until six (6) months after cessation of your employment with the Company, for any reason what so ever, you agree that you shall not, either on your own account or for any corporation, limited liability Company, partnership or other entity or person, solicit any employee of the Company or any subsidiary of the Company to leave his or her employment, induce or attempt to induce any such employee to terminate or breach his or her employment agreement, if any, or hire any employee or former employee of the Company or any subsidiary of the Company.')
+
+h('6.22 TIME SHEETS')
+p('You are required to follow client\'s specific timesheet process as per the timelines. In the absence of client\'s specific process, you will receive Timesheet alert email with template along with the guidelines from your Timesheet SPOC at the Company (Spartan). This has to be filled and approved by your manager over the email and it should reach the SPOC along with attachment before the timeline as briefed by the Company HR. Any delays in the timesheet approval process will lead to delay in the payment of your salary.')
+
 h('7. Conditional Offer Validity')
 for i in range(1, 4):
     text = original_clause(f'8.{i}').replace('[Validity Date]', '[valid_until]').replace('[Acceptance Deadline]', '[acceptance_deadline]')
+    if i == 1:
+        text = 'Please accept this offer within 24 hours of receiving it by signing and returning a copy of this letter.'
     if i == 3:
         text = 'This Offer Letter must not be shared, forwarded, copied, or disclosed to any third party or public platform without prior written authorization from Spartan Infosoft Pvt. Ltd. Unauthorized disclosure may result in appropriate disciplinary or legal action, subject to applicable laws.'
     clause(f'7.{i}', text)
 
+clause('7.4', 'Please maintain strict confidentiality of the terms and conditions of your employment. The Company takes a very serious view of such disclosures, and you will be liable for disciplinary action in case of breach of this condition of service.')
+
+acceptance_start = len(story)
 h('8. Acceptance & Acknowledgement')
 p('Please indicate your acceptance by signing and returning the duplicate copy of this letter. By signing below, I, <b>[candidate_name]</b>, confirm that I have read and understood this letter.')
 p('I accept this conditional offer on the terms stated above.')
@@ -161,15 +178,16 @@ signature = Table([
 ], colWidths=[BODY_WIDTH/2]*2, rowHeights=[20,sign_image.drawHeight+5,18,16,16], hAlign='LEFT', splitByRow=False)
 signature.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'TOP'),('LEFTPADDING',(0,0),(-1,-1),5.4),('TOPPADDING',(0,0),(-1,-1),0)]))
 story.append(signature)
+story[acceptance_start:] = [KeepTogether(story[acceptance_start:])]
 
 story.append(PageBreak())
 p('Annexure A: Salary Break-up', ParagraphStyle('Annexure',parent=heading,fontName='Times-Roman',fontSize=16,spaceBefore=0,spaceAfter=10))
 p('Compensation structure referred to in Clause 3 (Compensation) above, for the position of <b>[designation]</b>. Both monthly and annual amounts are shown for each component. All amounts are in INR.')
 rows = [[Paragraph('<b>Salary Component</b>',cell),Paragraph('<b>Monthly (INR)</b>',ParagraphStyle('HeaderRight',parent=cell,alignment=2)),Paragraph('<b>Annual (INR)</b>',ParagraphStyle('HeaderRight',parent=cell,alignment=2))]]
-components = [('Basic Salary','basic'),('House Rent Allowance (HRA)','hra'),('Leave Travel Allowance (LTA)','lta'),('Medical Allowance','medical'),('Conveyance Allowance','conveyance'),('Special Allowance','special'),('[other_label]','other'),('Gross Salary','gross'),("Employer's PF Contribution / Other Benefits, if applicable",'benefits'),('Cost to Company - CTC','ctc')]
+components = [('Basic Salary','basic'),('House Rent Allowance (HRA)','hra'),('Leave Travel Allowance (LTA)','lta'),('Medical Allowance','medical'),('Conveyance Allowance','conveyance'),('Special Allowance','special'),('[other_label]','other'),('Gross Salary','gross'),("Employer's PF Contribution / Other Benefits, if applicable",'benefits'),('Cost to Company - CTC','ctc'),('Less: Employee PF (estimated)','employee_pf'),('Estimated Net Salary (after employee PF)','net')]
 for label,key in components:
     amounts = [f'[{key}_monthly]', '[annual_ctc]' if key=='ctc' else f'[{key}_annual]']
-    bold = key in ['gross','ctc']
+    bold = key in ['gross','ctc','net']
     rows.append([Paragraph(('<b>'+escape(value)+'</b>') if bold else escape(value), ParagraphStyle('SalaryCell',parent=cell,alignment=0 if col==0 else 2)) for col,value in enumerate([label,*amounts])])
 salary = Table(rows,colWidths=[220.5,115.4,115.4],hAlign='LEFT')
 salary.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,0),BLUE),('BACKGROUND',(0,10),(-1,10),BLUE),('BACKGROUND',(0,8),(-1,8),colors.HexColor('#e7eef7')),('GRID',(0,0),(-1,-1),.4,colors.HexColor('#b9c9e2')),('TOPPADDING',(0,0),(-1,-1),5.5),('BOTTOMPADDING',(0,0),(-1,-1),5.5),('LEFTPADDING',(0,0),(-1,-1),5.4),('RIGHTPADDING',(0,0),(-1,-1),5.4),('VALIGN',(0,0),(-1,-1),'TOP')]))
@@ -183,6 +201,7 @@ story.append(salary)
 story.append(Spacer(1,18))
 p('Notes:')
 for item in [
+    'Estimated Net Salary = Gross Salary less employee PF under the configured salary policy. TDS, Professional Tax and other applicable payroll deductions are excluded; actual take-home pay may differ.',
     'Salary is subject to statutory deductions (TDS, Provident Fund, Professional Tax and others, as applicable).',
     'Components may be revised in accordance with Company policy and applicable law.',
     'No client billing component forms part of, or affects, the salary structure above.',

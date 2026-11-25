@@ -7,7 +7,6 @@ use App\Models\Candidate;
 use App\Models\OfferLetter;
 use App\Models\OfferLetterDelivery;
 use App\Models\User;
-use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
@@ -27,58 +26,9 @@ class OfferLetterService
         'signatory_name' => 'Authorized signatory name', 'signatory_designation' => 'Signatory designation',
     ];
 
-    public const DATE_FIELDS = ['letter_date' => 'Letter date', 'joining_date' => 'Proposed joining date', 'commencement_date' => 'Employment commencement date', 'document_deadline' => 'Document submission deadline', 'valid_until' => 'Offer valid until', 'acceptance_deadline' => 'Acceptance deadline'];
+    public const DATE_FIELDS = ['letter_date' => 'Letter date', 'joining_date' => 'Proposed joining date'];
 
     public const TERM_FIELDS = ['notice_probation' => 'Notice period during probation', 'notice_confirmed' => 'Notice period after confirmation', 'working_hours' => 'Regular working hours', 'working_days' => 'Weekly working days', 'leave_policy' => 'Leave policy'];
-
-    public static function previousBusinessDay(?string $date): ?string
-    {
-        if (! $date || Validator::make(['date' => $date], ['date' => 'date_format:Y-m-d'])->fails()) {
-            return null;
-        }
-
-        return CarbonImmutable::parse($date)->subWeekday()->toDateString();
-    }
-
-    /** Update only blank fields or fields still matching their previous automatic value. */
-    public static function dependentDates(string $field, ?string $value, ?string $old, array $current): array
-    {
-        $changes = [];
-        $update = function (string $key, ?string $next, ?string $previous) use ($current, &$changes): bool {
-            if (filled($current[$key] ?? null) && ($current[$key] ?? null) !== $previous) {
-                return false;
-            }
-            $changes[$key] = $next;
-
-            return true;
-        };
-        if ($field === 'joining_date') {
-            $next = self::previousBusinessDay($value);
-            $previous = self::previousBusinessDay($old);
-            if ($value && ! $next) {
-                return [];
-            }
-            if (! $update('commencement_date', $next, $previous)) {
-                return [];
-            }
-            $field = 'commencement_date';
-            $value = $next;
-            $old = $current['commencement_date'] ?? null;
-        }
-        if ($field === 'commencement_date') {
-            $update('document_deadline', $value, $old);
-            if (! $update('valid_until', $value, $old)) {
-                return $changes;
-            }
-            $field = 'valid_until';
-            $old = $current['valid_until'] ?? null;
-        }
-        if ($field === 'valid_until') {
-            $update('acceptance_deadline', $value, $old);
-        }
-
-        return $changes;
-    }
 
     private function authorize(User $actor, Candidate $candidate): void
     {
@@ -104,6 +54,14 @@ class OfferLetterService
         // the new allocation is applied only when the user explicitly saves a new revision.
         if (! isset($details['annual_package']) && isset($details['basic_monthly'])) {
             $details['annual_package'] = number_format(array_sum(array_map(fn ($key) => (float) ($details[$key.'_monthly'] ?? 0), array_keys(OfferLetterPdf::SALARY_COMPONENTS))) * 12, 2, '.', '');
+        }
+
+        foreach (['commencement_date', 'document_deadline', 'valid_until', 'acceptance_deadline'] as $removed) {
+            unset($details[$removed]);
+        }
+        $previousLeaveDefault = 'Annual/earned leave, casual leave, sick leave and holidays will be provided under Company policy and applicable law. Planned leave requires prior approval; illness or emergencies should be reported promptly. Accrual, carry-forward and encashment follow the applicable policy and statutory requirements. Statutory leave entitlements are preserved. The Company will communicate the leave policy and holiday calendar at onboarding.';
+        if (($details['leave_policy'] ?? null) === $previousLeaveDefault) {
+            $details['leave_policy'] = config('offer_letters.defaults.leave_policy');
         }
 
         return [...config('offer_letters.defaults'), ...$details];
@@ -136,14 +94,13 @@ class OfferLetterService
                     $rules[$field][] = 'after_or_equal:letter_date';
                 }
             }
-            $rules['acceptance_deadline'][] = 'before_or_equal:valid_until';
             $rules['annual_package'] = OfferSalaryCalculator::ANNUAL_CTC_RULES;
             if (is_string($data['leave_policy'] ?? null)) {
                 $data['leave_policy'] = preg_replace('/\r\n?|\n/', ' ', $data['leave_policy']);
             }
             $details = Validator::make($data, $rules)->validate();
             // Ignore any client-supplied components; the server owns the complete calculation.
-            $details = [...$details, ...app(OfferSalaryCalculator::class)->calculate($details['annual_package']), 'other_label' => 'Other allowance'];
+            $details = [...$details, ...app(OfferSalaryCalculator::class)->calculate($details['annual_package']), 'other_label' => 'Other allowance', 'offer_terms_version' => 2];
             Validator::make(['email' => $candidate->email], ['email' => 'required|email:rfc|max:255'])->validate();
             $details['candidate_name'] = $candidate->full_name;
             $pdf = app(OfferLetterPdf::class)->generate($details);
@@ -224,8 +181,8 @@ class OfferLetterService
                 if ($candidate->full_name !== $offer->details['candidate_name'] || trim((string) $candidate->email) !== $offer->recipient) {
                     throw ValidationException::withMessages(['offer' => "Nothing sent. {$candidate->candidate_code}: name or email changed. Save and preview a new draft."]);
                 }
-                foreach (['valid_until', 'acceptance_deadline'] as $date) {
-                    if ($offer->details[$date] < today()->toDateString()) {
+                foreach (($offer->details['offer_terms_version'] ?? 1) < 2 ? ['valid_until', 'acceptance_deadline'] : [] as $date) {
+                    if (($offer->details[$date] ?? '') < today()->toDateString()) {
                         throw ValidationException::withMessages(['offer' => "Nothing sent. {$candidate->candidate_code}: the offer has expired. Update the dates and preview again."]);
                     }
                 }

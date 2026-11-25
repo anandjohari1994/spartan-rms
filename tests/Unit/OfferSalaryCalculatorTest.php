@@ -26,6 +26,9 @@ class OfferSalaryCalculatorTest extends TestCase
         $this->assertSame('97000.00', $salary['gross_monthly']);
         $this->assertSame('100000.00', $salary['ctc_monthly']);
         $this->assertSame('1200000.00', $salary['ctc_annual']);
+        $this->assertSame('3000.00', $salary['employee_pf_monthly']);
+        $this->assertSame('94000.00', $salary['net_monthly']);
+        $this->assertSame('1128000.00', $salary['net_annual']);
         $lower = app(OfferSalaryCalculator::class)->calculate('120000');
         $this->assertLessThan(3000, (float) $lower['benefits_monthly']);
         $this->assertEqualsWithDelta((float) $lower['basic_annual'] * .12, (float) $lower['benefits_annual'], .01);
@@ -48,6 +51,7 @@ class OfferSalaryCalculatorTest extends TestCase
                 }
                 $this->assertSame((int) round((float) $salary['gross_'.$period] * 100), $sum);
                 $this->assertSame((int) round((float) $salary['ctc_'.$period] * 100), $sum + (int) round((float) $salary['benefits_'.$period] * 100));
+                $this->assertSame((int) round((float) $salary['net_'.$period] * 100), $sum - (int) round((float) $salary['employee_pf_'.$period] * 100));
             }
         }
     }

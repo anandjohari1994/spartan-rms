@@ -6,7 +6,11 @@ We are pleased to extend a conditional offer of employment to you for the positi
 
 Please find attached your Conditional Offer of Employment letter for your review. We request you to carefully read the complete document, including all terms and conditions and the salary annexure.
 
+@if (($details['offer_terms_version'] ?? 1) >= 2)
+Please accept this offer within 24 hours of receiving it by signing the offer letter and sharing a scanned copy or digitally signed copy with us.
+@else
 If you wish to accept this offer, kindly sign the offer letter and share a scanned copy or digitally signed copy with us on or before {{ \Carbon\Carbon::parse($details['acceptance_deadline'])->format('d F Y') }}.
+@endif
 
 Should you have any questions or require clarification regarding the offer, please feel free to reply to this email. Our HR team will be happy to assist you.
 

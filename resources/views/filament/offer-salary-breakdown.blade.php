@@ -29,6 +29,13 @@
                         <td class="px-4 py-3 text-right tabular-nums">{{ number_format($breakdown['ctc_monthly'], 2) }}</td>
                         <td class="px-4 py-3 text-right tabular-nums">{{ number_format($breakdown['ctc_annual'], 2) }}</td>
                     </tr>
+                    @foreach (['employee_pf' => 'Less: Employee PF (estimated)', 'net' => 'Estimated Net Salary (after employee PF)'] as $key => $label)
+                        <tr class="font-semibold">
+                            <td class="px-4 py-3">{{ $label }}</td>
+                            <td class="px-4 py-3 text-right tabular-nums">{{ number_format($breakdown[$key . '_monthly'], 2) }}</td>
+                            <td class="px-4 py-3 text-right tabular-nums">{{ number_format($breakdown[$key . '_annual'], 2) }}</td>
+                        </tr>
+                    @endforeach
                 </tbody>
             </table>
         </div>
@@ -41,7 +48,7 @@
             @endforeach
             The remaining gross salary is special allowance.
         </p>
-        <p class="text-xs text-gray-500 dark:text-gray-400">Annual amounts define the package. Monthly figures are rounded to two decimals, with rounding adjustments in special allowance. Employee deductions are not subtracted from CTC; this is not take-home pay.</p>
+        <p class="text-xs text-gray-500 dark:text-gray-400">Annual amounts define the package. Monthly figures are rounded to two decimals, with rounding adjustments in special allowance. Estimated Net Salary is gross salary less employee PF ({{ $breakdown['salary_policy']['employee_pf_percent'] }}% of basic, subject to the configured PF ceiling). TDS, Professional Tax and other applicable payroll deductions are excluded; actual take-home pay may differ. Employer PF is included in CTC and is not deducted again from gross salary.</p>
     @else
         <p class="text-sm text-gray-500 dark:text-gray-400">Enter a valid annual package to see the automatic monthly and annual breakup.</p>
     @endif

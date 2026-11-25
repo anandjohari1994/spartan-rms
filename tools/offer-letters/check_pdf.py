@@ -5,23 +5,29 @@ import pdfplumber
 from reportlab.lib.utils import ImageReader
 
 with pdfplumber.open(sys.argv[1]) as doc:
-    full='\n'.join(p.extract_text() for p in doc.pages)
+    full='\n'.join(p.extract_text(x_tolerance=1) for p in doc.pages)
     normalized=' '.join(full.split())
-    assert len(doc.pages)==6
+    assert len(doc.pages) >= 6
     assert '("Company")' in normalized
     assert '("the Company")' not in normalized
     assert 'Reporting Manager' not in normalized
     assert 'Offer of Conditional Employment' not in normalized
     assert not re.search(r'\[[a-z0-9_]+\]',full), 'Unfilled PDF placeholder'
     assert normalized.index('4. Pending Client Interview') < normalized.index('4.1 You have successfully completed Round 1') < normalized.index('4.2 This letter is a conditional offer only') < normalized.index('5. Client Deployment')
-    assert 'Clause 2' in normalized and 'Clause 3 (Compensation)' in normalized
+    assert 'Clause 3 (Compensation)' in normalized
     assert '5.1 "Client billing' not in normalized and 'rounds."' not in normalized
-    assert normalized.count('Completed Company joining and employee information forms;')==1
+    assert 'Completed Company joining and employee information forms;' not in normalized
+    for removed in ['Employment Commencement Date', 'Onboarding and Documentation.', 'Document Submission', '[valid_until]', '[acceptance_deadline]']:
+        assert removed not in normalized, removed
+    for added in ['Estimated Net Salary', 'Employee PF', 'within 24 hours of receiving it', '18 Leaves in a year (12 earned leaves + 6 Sick Leaves)', '1.5 days of leave', 'TRAINING AND DEVELOPMENT', 'JOB ROLES & RESPONSIBILITIES', 'ASSIGNMENT', 'TERMINATION', 'NO HIRE OF EMPLOYEES', 'five consecutive working days', 'Please maintain strict confidentiality of the terms and conditions']:
+        assert added in normalized, added
     acceptance = normalized.split('8. Acceptance & Acknowledgement', 1)[1].split('We look forward', 1)[0]
     assert re.fullmatch(r'Please indicate your acceptance by signing and returning the duplicate copy of this letter\. By signing below, I, .+?, confirm that I have read and understood this letter\. I accept this conditional offer on the terms stated above\.', acceptance.strip()), acceptance
     assert not re.search(r'\([a-f]\)', acceptance), 'Obsolete acceptance items remain'
     confidentiality = 'This Offer Letter must not be shared, forwarded, copied, or disclosed to any third party or public platform without prior written authorization from Spartan Infosoft Pvt. Ltd. Unauthorized disclosure may result in appropriate disciplinary or legal action, subject to applicable laws.'
     assert normalized.count(confidentiality)==1, 'Confidentiality clause missing or duplicated'
+    assert '6.22 TIME SHEETS' in normalized
+    assert 'Any delays in the timesheet approval process will lead to delay in the payment of your salary.' in normalized
     regular_prefixes={'4.1','4.2','4.3','4.4','5.1'}
     checked=set()
     active=None

@@ -249,27 +249,9 @@
       {
         "x": 237.04999999999998,
         "right": 523.4,
-        "top": 448.3,
-        "bottom": 458.3,
-        "baseline": 455.8,
-        "size": 10.0,
-        "runs": [
-          {
-            "key": "commencement_date",
-            "bold": false
-          },
-          {
-            "text": "",
-            "bold": false
-          }
-        ]
-      },
-      {
-        "x": 237.04999999999998,
-        "right": 523.4,
-        "top": 466.09999999999997,
-        "bottom": 476.09999999999997,
-        "baseline": 473.59999999999997,
+        "top": 448.29999999999995,
+        "bottom": 458.29999999999995,
+        "baseline": 455.79999999999995,
         "size": 10.0,
         "runs": [
           {
@@ -277,7 +259,7 @@
             "bold": false
           },
           {
-            "text": " months from the Employment Commencement Date",
+            "text": " months from the date of joining",
             "bold": false
           }
         ]
@@ -285,32 +267,9 @@
       {
         "x": 72.1,
         "right": 523.4,
-        "top": 506.425,
-        "bottom": 516.925,
-        "baseline": 514.3,
-        "size": 10.5,
-        "runs": [
-          {
-            "text": "final client interview. Please submit the following on or before ",
-            "bold": false
-          },
-          {
-            "key": "document_deadline",
-            "bold": true
-          },
-          {
-            "text": ":",
-            "bold": false
-          }
-        ],
-        "align": "left"
-      },
-      {
-        "x": 72.1,
-        "right": 523.4,
-        "top": 698.425,
-        "bottom": 708.925,
-        "baseline": 706.3,
+        "top": 525.425,
+        "bottom": 535.925,
+        "baseline": 533.3,
         "size": 10.5,
         "runs": [
           {
@@ -331,9 +290,9 @@
       {
         "x": 72.1,
         "right": 523.4,
-        "top": 712.825,
-        "bottom": 723.325,
-        "baseline": 720.7,
+        "top": 539.825,
+        "bottom": 550.325,
+        "baseline": 547.7,
         "size": 10.5,
         "runs": [
           {
@@ -350,19 +309,13 @@
           }
         ],
         "align": "justify"
-      }
-    ]
-  },
-  {
-    "width": 595.304,
-    "height": 841.89,
-    "entries": [
+      },
       {
         "x": 72.1,
         "right": 523.4,
-        "top": 112.62499999999989,
-        "bottom": 123.12499999999989,
-        "baseline": 120.49999999999989,
+        "top": 576.625,
+        "bottom": 587.125,
+        "baseline": 584.5,
         "size": 10.5,
         "runs": [
           {
@@ -380,13 +333,42 @@
         ],
         "align": "justify"
       }
+    ]
+  },
+  {
+    "width": 595.304,
+    "height": 841.89,
+    "entries": [
+      {
+        "x": 72.1,
+        "right": 523.4,
+        "top": 112.625,
+        "bottom": 123.125,
+        "baseline": 120.5,
+        "size": 10.5,
+        "runs": [
+          {
+            "text": "3.6 Your estimated monthly Net Salary after employee PF is INR ",
+            "bold": false
+          },
+          {
+            "key": "net_monthly",
+            "bold": false
+          },
+          {
+            "text": ". TDS, Professional Tax and",
+            "bold": false
+          }
+        ],
+        "align": "justify"
+      }
     ],
     "optional_clause": {
       "x": 72.1,
-      "top": 574.525,
+      "top": 435.325,
       "right": 523.4,
-      "bottom": 614.825,
-      "baseline": 582.9,
+      "bottom": 475.625,
+      "baseline": 443.7,
       "text": "4.7 If you are not selected by the client, the Company may, at its sole discretion, consider you for other suitable opportunities, failing which your employment may be reviewed or ended in accordance with the Employment Agreement and applicable law."
     }
   },
@@ -397,9 +379,9 @@
       {
         "x": 72.1,
         "right": 523.4,
-        "top": 561.625,
-        "bottom": 600.925,
-        "baseline": 569.5,
+        "top": 428.825,
+        "bottom": 468.125,
+        "baseline": 436.7,
         "size": 10.5,
         "runs": [
           {
@@ -413,9 +395,9 @@
       {
         "x": 72.1,
         "right": 523.4,
-        "top": 624.225,
-        "bottom": 663.525,
-        "baseline": 632.1,
+        "top": 491.425,
+        "bottom": 530.725,
+        "baseline": 499.3,
         "size": 10.5,
         "runs": [
           {
@@ -425,19 +407,13 @@
         ],
         "multiline": true,
         "max_lines": 3
-      }
-    ]
-  },
-  {
-    "width": 595.304,
-    "height": 841.89,
-    "entries": [
+      },
       {
         "x": 72.1,
         "right": 523.4,
-        "top": 128.02499999999998,
-        "bottom": 210.52499999999998,
-        "baseline": 135.89999999999998,
+        "top": 554.0250000000001,
+        "bottom": 636.5250000000001,
+        "baseline": 561.9000000000001,
         "size": 10.5,
         "runs": [
           {
@@ -447,59 +423,29 @@
         ],
         "multiline": true,
         "max_lines": 6
-      },
+      }
+    ]
+  },
+  {
+    "width": 595.304,
+    "height": 841.89,
+    "entries": []
+  },
+  {
+    "width": 595.304,
+    "height": 841.89,
+    "entries": []
+  },
+  {
+    "width": 595.304,
+    "height": 841.89,
+    "entries": [
       {
         "x": 72.1,
         "right": 523.4,
-        "top": 432.825,
-        "bottom": 443.325,
-        "baseline": 440.7,
-        "size": 10.5,
-        "runs": [
-          {
-            "text": "7.1 This conditional offer is valid until ",
-            "bold": false
-          },
-          {
-            "key": "valid_until",
-            "bold": true
-          },
-          {
-            "text": ". Kindly confirm your acceptance by signing and",
-            "bold": false
-          }
-        ],
-        "align": "justify"
-      },
-      {
-        "x": 72.1,
-        "right": 523.4,
-        "top": 447.225,
-        "bottom": 457.725,
-        "baseline": 455.1,
-        "size": 10.5,
-        "runs": [
-          {
-            "text": "returning a copy of this letter on or before ",
-            "bold": false
-          },
-          {
-            "key": "acceptance_deadline",
-            "bold": true
-          },
-          {
-            "text": ".",
-            "bold": false
-          }
-        ],
-        "align": "left"
-      },
-      {
-        "x": 72.1,
-        "right": 523.4,
-        "top": 608.825,
-        "bottom": 619.325,
-        "baseline": 616.7,
+        "top": 149.42499999999995,
+        "bottom": 159.92499999999995,
+        "baseline": 157.29999999999995,
         "size": 10.5,
         "runs": [
           {
@@ -516,19 +462,13 @@
           }
         ],
         "align": "left"
-      }
-    ]
-  },
-  {
-    "width": 595.304,
-    "height": 841.89,
-    "entries": [
+      },
       {
         "x": 77.5,
         "right": 290,
-        "top": 234.6499,
-        "bottom": 244.6499,
-        "baseline": 242.1499,
+        "top": 353.0499,
+        "bottom": 363.0499,
+        "baseline": 360.5499,
         "size": 10.0,
         "runs": [
           {
@@ -540,9 +480,9 @@
       {
         "x": 303.15,
         "right": 523.4,
-        "top": 234.6499,
-        "bottom": 244.6499,
-        "baseline": 242.1499,
+        "top": 353.0499,
+        "bottom": 363.0499,
+        "baseline": 360.5499,
         "size": 10.0,
         "runs": [
           {
@@ -554,9 +494,9 @@
       {
         "x": 77.5,
         "right": 290,
-        "top": 252.6499,
-        "bottom": 262.6499,
-        "baseline": 260.1499,
+        "top": 371.0499,
+        "bottom": 381.0499,
+        "baseline": 378.5499,
         "size": 10.0,
         "runs": [
           {
@@ -572,9 +512,9 @@
       {
         "x": 77.5,
         "right": 290,
-        "top": 268.6499,
-        "bottom": 278.6499,
-        "baseline": 276.1499,
+        "top": 387.0499,
+        "bottom": 397.0499,
+        "baseline": 394.5499,
         "size": 10.0,
         "runs": [
           {
@@ -669,9 +609,9 @@
       {
         "x": 302.600003,
         "right": 402.600003,
-        "top": 225.5999999999999,
-        "bottom": 235.5999999999999,
-        "baseline": 233.0999999999999,
+        "top": 225.60000000000002,
+        "bottom": 235.60000000000002,
+        "baseline": 233.10000000000002,
         "size": 10.0,
         "runs": [
           {
@@ -694,9 +634,9 @@
       {
         "x": 418.000002,
         "right": 518.000002,
-        "top": 225.5999999999999,
-        "bottom": 235.5999999999999,
-        "baseline": 233.0999999999999,
+        "top": 225.60000000000002,
+        "bottom": 235.60000000000002,
+        "baseline": 233.10000000000002,
         "size": 10.0,
         "runs": [
           {
@@ -919,9 +859,9 @@
       {
         "x": 77.5,
         "right": 286,
-        "top": 341.59999999999997,
-        "bottom": 351.59999999999997,
-        "baseline": 349.09999999999997,
+        "top": 341.6,
+        "bottom": 351.6,
+        "baseline": 349.1,
         "size": 10.0,
         "runs": [
           {
@@ -944,9 +884,9 @@
       {
         "x": 302.599997,
         "right": 402.599997,
-        "top": 341.59999999999997,
-        "bottom": 351.59999999999997,
-        "baseline": 349.09999999999997,
+        "top": 341.6,
+        "bottom": 351.6,
+        "baseline": 349.1,
         "size": 10.0,
         "runs": [
           {
@@ -969,9 +909,9 @@
       {
         "x": 417.999996,
         "right": 517.999996,
-        "top": 341.59999999999997,
-        "bottom": 351.59999999999997,
-        "baseline": 349.09999999999997,
+        "top": 341.6,
+        "bottom": 351.6,
+        "baseline": 349.1,
         "size": 10.0,
         "runs": [
           {
@@ -1094,9 +1034,9 @@
       {
         "x": 302.600001,
         "right": 402.600001,
-        "top": 423.4,
-        "bottom": 433.4,
-        "baseline": 430.9,
+        "top": 423.40000000000003,
+        "bottom": 433.40000000000003,
+        "baseline": 430.90000000000003,
         "size": 10.0,
         "runs": [
           {
@@ -1119,9 +1059,9 @@
       {
         "x": 418.0,
         "right": 518.0,
-        "top": 423.4,
-        "bottom": 433.4,
-        "baseline": 430.9,
+        "top": 423.40000000000003,
+        "bottom": 433.40000000000003,
+        "baseline": 430.90000000000003,
         "size": 10.0,
         "runs": [
           {
@@ -1139,6 +1079,106 @@
           255,
           255,
           255
+        ]
+      },
+      {
+        "x": 302.59999899999997,
+        "right": 402.59999899999997,
+        "top": 446.6,
+        "bottom": 456.6,
+        "baseline": 454.1,
+        "size": 10.0,
+        "runs": [
+          {
+            "key": "employee_pf_monthly",
+            "bold": false
+          }
+        ],
+        "align": "right",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "x": 418.000004,
+        "right": 518.000004,
+        "top": 446.6,
+        "bottom": 456.6,
+        "baseline": 454.1,
+        "size": 10.0,
+        "runs": [
+          {
+            "key": "employee_pf_annual",
+            "bold": false
+          }
+        ],
+        "align": "right",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "x": 302.600002,
+        "right": 402.600002,
+        "top": 469.8,
+        "bottom": 479.8,
+        "baseline": 477.3,
+        "size": 10.0,
+        "runs": [
+          {
+            "key": "net_monthly",
+            "bold": true
+          }
+        ],
+        "align": "right",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "x": 418.000001,
+        "right": 518.000001,
+        "top": 469.8,
+        "bottom": 479.8,
+        "baseline": 477.3,
+        "size": 10.0,
+        "runs": [
+          {
+            "key": "net_annual",
+            "bold": true
+          }
+        ],
+        "align": "right",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "color": [
+          0,
+          0,
+          0
         ]
       }
     ]

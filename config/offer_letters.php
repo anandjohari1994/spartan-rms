@@ -15,7 +15,7 @@ return [
         'notice_confirmed' => '1 month',
         'working_hours' => '9 hours per day',
         'working_days' => '5 days per week (Monday to Friday)',
-        'leave_policy' => 'Annual/earned leave, casual leave, sick leave and holidays will be provided under Company policy and applicable law. Planned leave requires prior approval; illness or emergencies should be reported promptly. Accrual, carry-forward and encashment follow the applicable policy and statutory requirements. Statutory leave entitlements are preserved. The Company will communicate the leave policy and holiday calendar at onboarding.',
+        'leave_policy' => 'You would be entitled for total 18 Leaves in a year (12 earned leaves + 6 Sick Leaves), You would be credited with 1.5 days of leave upon providing full month of your service. Leaves cannot be encashed and all unutilized leaves will lapse at the end of the calendar year.',
     ],
     // Company allocation defaults, not a universal statutory salary structure.
     'basic_percent_of_gross' => 50,
@@ -27,6 +27,7 @@ return [
         'other' => 5,
     ],
     'employer_pf_percent' => 12,
+    'employee_pf_percent' => 12,
     // Revised effective 17 September 2026. Employer contribution is capped at 12% of this ceiling.
     // https://www.pib.gov.in/PressReleasePage.aspx?PRID=2313790&lang=2&reg=48
     'pf_monthly_wage_ceiling' => 25000,

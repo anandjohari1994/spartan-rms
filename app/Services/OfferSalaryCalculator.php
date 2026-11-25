@@ -16,8 +16,9 @@ class OfferSalaryCalculator
         $basicRate = $policy['basic_percent_of_gross'] / 100;
         $hraRate = $policy['hra_percent_of_basic'] / 100;
         $pfRate = $policy['employer_pf_percent'] / 100;
+        $employeePfRate = $policy['employee_pf_percent'] / 100;
         $allowanceRates = array_map(fn ($percent) => $percent / 100, $policy['allowance_percent_of_gross']);
-        if ($basicRate <= 0 || $basicRate * (1 + $hraRate) + array_sum($allowanceRates) > 1 || min($allowanceRates) < 0 || $hraRate < 0 || $pfRate < 0 || $policy['pf_monthly_wage_ceiling'] < 0) {
+        if ($basicRate <= 0 || $basicRate * (1 + $hraRate) + array_sum($allowanceRates) > 1 || min($allowanceRates) < 0 || $hraRate < 0 || $pfRate < 0 || $employeePfRate < 0 || $employeePfRate > 1 || $policy['pf_monthly_wage_ceiling'] < 0) {
             throw new \LogicException('Invalid offer letter salary allocation configuration.');
         }
         // Calculate in annual paise so the CTC never changes because of monthly rounding.
@@ -35,7 +36,11 @@ class OfferSalaryCalculator
         // Allocate rounding residuals to special allowance, keeping both columns additive.
         $monthly['gross'] = $monthly['ctc'] - $monthly['benefits'];
         $monthly['special'] = $monthly['gross'] - $monthly['basic'] - $monthly['hra'] - array_sum(array_intersect_key($monthly, $allowances));
-        $result = ['annual_package' => $this->decimal($ctc), 'salary_policy' => $policy, 'salary_calculation_version' => 2];
+        $annual['employee_pf'] = (int) round(min($basic, $policy['pf_monthly_wage_ceiling'] * 12 * 100) * $employeePfRate);
+        $monthly['employee_pf'] = (int) round($annual['employee_pf'] / 12);
+        $annual['net'] = $annual['gross'] - $annual['employee_pf'];
+        $monthly['net'] = $monthly['gross'] - $monthly['employee_pf'];
+        $result = ['annual_package' => $this->decimal($ctc), 'salary_policy' => $policy, 'salary_calculation_version' => 3];
         foreach ($annual as $key => $paise) {
             $result[$key.'_annual'] = $this->decimal($paise);
             $result[$key.'_monthly'] = $this->decimal($monthly[$key]);

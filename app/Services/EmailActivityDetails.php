@@ -35,7 +35,8 @@ class EmailActivityDetails
         }
 
         $details = $delivery->details;
-        $canPreview = isset($details['candidate_name'], $details['designation'], $details['acceptance_deadline']);
+        $canPreview = isset($details['candidate_name'], $details['designation'])
+            && (($details['offer_terms_version'] ?? 1) >= 2 || isset($details['acceptance_deadline']));
 
         return [
             ...$values,

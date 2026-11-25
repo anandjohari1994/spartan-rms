@@ -19,7 +19,6 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
-use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
@@ -66,20 +65,6 @@ class OfferLetterResource extends Resource
         $dates = [];
         foreach (OfferLetterService::DATE_FIELDS as $name => $label) {
             $date = DatePicker::make($name)->label($label)->required();
-            if (in_array($name, ['joining_date', 'commencement_date', 'valid_until'])) {
-                $date->live()->afterStateUpdated(function (?string $state, ?string $old, Get $get, Set $set) use ($name) {
-                    $current = [];
-                    foreach (array_keys(OfferLetterService::DATE_FIELDS) as $key) {
-                        $current[$key] = $get($key);
-                    }
-                    foreach (OfferLetterService::dependentDates($name, $state, $old, $current) as $key => $value) {
-                        $set($key, $value);
-                    }
-                });
-            }
-            if ($name === 'joining_date') {
-                $date->helperText('Sets commencement to the previous Monday-Friday working day. Linked deadlines follow it; manually changed dates are kept.');
-            }
             $dates[] = $date;
         }
 

@@ -15,7 +15,7 @@ class OfferLetterPdf
         $values = $details;
         $values['notice_terms'] = 'The notice period is '.$details['notice_probation'].' during probation and '.$details['notice_confirmed'].' after confirmation, subject to the Employment Agreement and applicable law.';
         $values['working_terms'] = 'Regular working hours: '.$details['working_hours'].'. Weekly working days: '.$details['working_days'].'. Daily timings and rest breaks will be communicated by the Company.';
-        foreach (['letter_date', 'joining_date', 'commencement_date', 'document_deadline', 'valid_until', 'acceptance_deadline'] as $key) {
+        foreach (['letter_date', 'joining_date'] as $key) {
             $values[$key] = Carbon::parse($details[$key])->format('d F Y');
         }
         $values['signature_date'] = Carbon::parse($details['letter_date'])->format('d/m/Y');
@@ -24,7 +24,7 @@ class OfferLetterPdf
             1 => 'st', 2 => 'nd', 3 => 'rd', default => 'th'
         });
         if (isset($details['salary_calculation_version'])) {
-            foreach ([...array_keys(self::SALARY_COMPONENTS), 'gross', 'ctc'] as $key) {
+            foreach ([...array_keys(self::SALARY_COMPONENTS), 'gross', 'ctc', ...((int) $details['salary_calculation_version'] >= 3 ? ['employee_pf', 'net'] : [])] as $key) {
                 foreach (['monthly', 'annual'] as $period) {
                     $values[$key.'_'.$period] = number_format((float) $details[$key.'_'.$period], 2);
                 }

@@ -6,7 +6,7 @@ from pathlib import Path
 import pdfplumber
 
 pages = []
-value_fields = {'designation', 'department', 'work_location', 'employment_type', 'joining_date', 'commencement_date', 'months'}
+value_fields = {'designation', 'department', 'work_location', 'employment_type', 'joining_date', 'months'}
 aliases = {'months': 'probation_months'}
 
 def entry(page, match, left, right, runs=None, **extra):
