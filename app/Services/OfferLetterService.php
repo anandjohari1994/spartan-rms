@@ -95,12 +95,13 @@ class OfferLetterService
                 }
             }
             $rules['annual_package'] = OfferSalaryCalculator::ANNUAL_CTC_RULES;
+            $rules['professional_tax_category'] = ['required', Rule::in(array_keys(OfferSalaryCalculator::PROFESSIONAL_TAX_CATEGORIES))];
             if (is_string($data['leave_policy'] ?? null)) {
                 $data['leave_policy'] = preg_replace('/\r\n?|\n/', ' ', $data['leave_policy']);
             }
             $details = Validator::make($data, $rules)->validate();
             // Ignore any client-supplied components; the server owns the complete calculation.
-            $details = [...$details, ...app(OfferSalaryCalculator::class)->calculate($details['annual_package']), 'other_label' => 'Other allowance', 'offer_terms_version' => 2];
+            $details = [...$details, ...app(OfferSalaryCalculator::class)->calculate($details['annual_package'], $details['professional_tax_category']), 'other_label' => 'Other allowance', 'offer_terms_version' => 2];
             Validator::make(['email' => $candidate->email], ['email' => 'required|email:rfc|max:255'])->validate();
             $details['candidate_name'] = $candidate->full_name;
             $pdf = app(OfferLetterPdf::class)->generate($details);

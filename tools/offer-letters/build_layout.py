@@ -7,7 +7,7 @@ import pdfplumber
 
 pages = []
 value_fields = {'designation', 'department', 'work_location', 'employment_type', 'joining_date', 'months'}
-aliases = {'months': 'probation_months'}
+aliases = {'months': 'probation_months', 'pt_monthly': 'professional_tax_monthly', 'pt_annual': 'professional_tax_annual'}
 
 def entry(page, match, left, right, runs=None, **extra):
     return {'x':left, 'right':right, 'top':match['top'], 'bottom':match['bottom'],
@@ -27,7 +27,7 @@ with pdfplumber.open('resources/offer-letters/revised-reference.pdf') as doc:
                 continue
             if is_annexure and any(m['key'].endswith(('_monthly','_annual')) or m['key']=='other_label' for m in on_line):
                 for m in on_line:
-                    is_total=m['key'].startswith('gross_')
+                    is_total=m['key'].startswith(('gross_', 'net_'))
                     is_ctc=m['key'] in ['ctc_monthly','annual_ctc']
                     is_label=m['key']=='other_label'
                     right=286 if is_label else m['x1']

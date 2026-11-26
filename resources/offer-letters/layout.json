@@ -348,7 +348,7 @@
         "size": 10.5,
         "runs": [
           {
-            "text": "3.6 Your estimated monthly Net Salary after employee PF is INR ",
+            "text": "3.6 Your estimated regular monthly Net Salary after Professional Tax is INR ",
             "bold": false
           },
           {
@@ -356,7 +356,7 @@
             "bold": false
           },
           {
-            "text": ". TDS, Professional Tax and",
+            "text": ". Employee PF,",
             "bold": false
           }
         ],
@@ -709,9 +709,9 @@
       {
         "x": 302.60000199999996,
         "right": 402.60000199999996,
-        "top": 271.9999999999999,
-        "bottom": 281.9999999999999,
-        "baseline": 279.4999999999999,
+        "top": 272.0,
+        "bottom": 282.0,
+        "baseline": 279.5,
         "size": 10.0,
         "runs": [
           {
@@ -734,9 +734,9 @@
       {
         "x": 418.000001,
         "right": 518.000001,
-        "top": 271.9999999999999,
-        "bottom": 281.9999999999999,
-        "baseline": 279.4999999999999,
+        "top": 272.0,
+        "bottom": 282.0,
+        "baseline": 279.5,
         "size": 10.0,
         "runs": [
           {
@@ -982,11 +982,111 @@
         ]
       },
       {
+        "x": 302.599995,
+        "right": 402.599995,
+        "top": 388.00000000000006,
+        "bottom": 398.00000000000006,
+        "baseline": 395.50000000000006,
+        "size": 10.0,
+        "runs": [
+          {
+            "key": "professional_tax_monthly",
+            "bold": false
+          }
+        ],
+        "align": "right",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "x": 417.999994,
+        "right": 517.999994,
+        "top": 388.00000000000006,
+        "bottom": 398.00000000000006,
+        "baseline": 395.50000000000006,
+        "size": 10.0,
+        "runs": [
+          {
+            "key": "professional_tax_annual",
+            "bold": false
+          }
+        ],
+        "align": "right",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "x": 302.600002,
+        "right": 402.600002,
+        "top": 411.20000000000005,
+        "bottom": 421.20000000000005,
+        "baseline": 418.70000000000005,
+        "size": 10.0,
+        "runs": [
+          {
+            "key": "net_monthly",
+            "bold": true
+          }
+        ],
+        "align": "right",
+        "background": [
+          231,
+          238,
+          247
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "x": 418.000001,
+        "right": 518.000001,
+        "top": 411.20000000000005,
+        "bottom": 421.20000000000005,
+        "baseline": 418.70000000000005,
+        "size": 10.0,
+        "runs": [
+          {
+            "key": "net_annual",
+            "bold": true
+          }
+        ],
+        "align": "right",
+        "background": [
+          231,
+          238,
+          247
+        ],
+        "color": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
         "x": 302.599996,
         "right": 402.599996,
-        "top": 388.0,
-        "bottom": 398.0,
-        "baseline": 395.5,
+        "top": 434.40000000000003,
+        "bottom": 444.40000000000003,
+        "baseline": 441.90000000000003,
         "size": 10.0,
         "runs": [
           {
@@ -1009,9 +1109,9 @@
       {
         "x": 417.999995,
         "right": 517.999995,
-        "top": 388.0,
-        "bottom": 398.0,
-        "baseline": 395.5,
+        "top": 434.40000000000003,
+        "bottom": 444.40000000000003,
+        "baseline": 441.90000000000003,
         "size": 10.0,
         "runs": [
           {
@@ -1034,9 +1134,9 @@
       {
         "x": 302.600001,
         "right": 402.600001,
-        "top": 423.40000000000003,
-        "bottom": 433.40000000000003,
-        "baseline": 430.90000000000003,
+        "top": 457.6,
+        "bottom": 467.6,
+        "baseline": 465.1,
         "size": 10.0,
         "runs": [
           {
@@ -1059,9 +1159,9 @@
       {
         "x": 418.0,
         "right": 518.0,
-        "top": 423.40000000000003,
-        "bottom": 433.40000000000003,
-        "baseline": 430.90000000000003,
+        "top": 457.6,
+        "bottom": 467.6,
+        "baseline": 465.1,
         "size": 10.0,
         "runs": [
           {
@@ -1079,106 +1179,6 @@
           255,
           255,
           255
-        ]
-      },
-      {
-        "x": 302.59999899999997,
-        "right": 402.59999899999997,
-        "top": 446.6,
-        "bottom": 456.6,
-        "baseline": 454.1,
-        "size": 10.0,
-        "runs": [
-          {
-            "key": "employee_pf_monthly",
-            "bold": false
-          }
-        ],
-        "align": "right",
-        "background": [
-          255,
-          255,
-          255
-        ],
-        "color": [
-          0,
-          0,
-          0
-        ]
-      },
-      {
-        "x": 418.000004,
-        "right": 518.000004,
-        "top": 446.6,
-        "bottom": 456.6,
-        "baseline": 454.1,
-        "size": 10.0,
-        "runs": [
-          {
-            "key": "employee_pf_annual",
-            "bold": false
-          }
-        ],
-        "align": "right",
-        "background": [
-          255,
-          255,
-          255
-        ],
-        "color": [
-          0,
-          0,
-          0
-        ]
-      },
-      {
-        "x": 302.600002,
-        "right": 402.600002,
-        "top": 469.8,
-        "bottom": 479.8,
-        "baseline": 477.3,
-        "size": 10.0,
-        "runs": [
-          {
-            "key": "net_monthly",
-            "bold": true
-          }
-        ],
-        "align": "right",
-        "background": [
-          255,
-          255,
-          255
-        ],
-        "color": [
-          0,
-          0,
-          0
-        ]
-      },
-      {
-        "x": 418.000001,
-        "right": 518.000001,
-        "top": 469.8,
-        "bottom": 479.8,
-        "baseline": 477.3,
-        "size": 10.0,
-        "runs": [
-          {
-            "key": "net_annual",
-            "bold": true
-          }
-        ],
-        "align": "right",
-        "background": [
-          255,
-          255,
-          255
-        ],
-        "color": [
-          0,
-          0,
-          0
         ]
       }
     ]

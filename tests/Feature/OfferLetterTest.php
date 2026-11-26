@@ -74,7 +74,7 @@ class OfferLetterTest extends TestCase
             'reference' => 'SI/OFFER/2026/001', 'address_line_1' => '12, Lotus Apartments', 'address_line_2' => 'Kalyani Nagar, Pune', 'state' => 'Maharashtra', 'pin_code' => '411014',
             'designation' => 'Software Engineer', 'department' => 'Engineering', 'work_location' => 'Pune', 'employment_type' => 'Full-Time',
             'letter_date' => today()->toDateString(), 'joining_date' => today()->addDays(20)->toDateString(), 'probation_months' => 6,
-            'annual_package' => '636000.00',
+            'annual_package' => '636000.00', 'professional_tax_category' => 'male',
             'other_label' => 'Other allowance', 'salary_payment_day' => 7, 'signatory_name' => 'Ananya Sharma', 'signatory_designation' => 'HR Manager', 'optional_clause' => 'include',
         ];
     }
@@ -520,7 +520,8 @@ class OfferLetterTest extends TestCase
     {
         $candidate = $this->candidate();
         $page = Livewire::test(ListOfferLetters::class)->mountTableAction('prepareOffer', $candidate)
-            ->set('mountedActions.0.data.annual_package', '1200000');
+            ->set('mountedActions.0.data.annual_package', '1200000')
+            ->set('mountedActions.0.data.professional_tax_category', 'male');
         // Filament returns action modals as partial renders, outside Livewire's root HTML.
         $html = $page->instance()->getSchema('mountedActionSchema0')->toHtml();
         foreach (['100,000.00', '48,500.00', '19,400.00', '3,000.00', '4,850.00', '2,425.00', '14,550.00'] as $amount) {
@@ -528,7 +529,7 @@ class OfferLetterTest extends TestCase
         }
         $page->set('mountedActions.0.data.annual_package', '');
         $this->assertStringContainsString('Enter a valid annual package', $page->instance()->getSchema('mountedActionSchema0')->toHtml());
-        $offer = app(OfferLetterService::class)->saveDraft($this->admin, $candidate, [...self::details(), 'basic_monthly' => 1, 'benefits_monthly' => 999999, 'ctc_annual' => 1]);
+        $offer = app(OfferLetterService::class)->saveDraft($this->admin, $candidate, [...self::details(), 'basic_monthly' => 1, 'benefits_monthly' => 999999, 'ctc_annual' => 1, 'professional_tax_annual' => 0, 'net_monthly' => 999999]);
         $this->assertSame('25000.00', $offer->details['basic_monthly']);
         $this->assertSame('3000.00', $offer->details['benefits_monthly']);
         $this->assertSame('2500.00', $offer->details['lta_monthly']);
@@ -536,7 +537,26 @@ class OfferLetterTest extends TestCase
         $this->assertSame('1250.00', $offer->details['conveyance_monthly']);
         $this->assertSame('2500.00', $offer->details['other_monthly']);
         $this->assertSame('636000.00', $offer->details['ctc_annual']);
-        $this->assertSame(app(OfferSalaryCalculator::class)->calculate('636000.00')['salary_policy'], $offer->details['salary_policy']);
+        $this->assertSame('2500.00', $offer->details['professional_tax_annual']);
+        $this->assertSame('49800.00', $offer->details['net_monthly']);
+        $this->assertSame('0.00', $offer->details['employee_pf_monthly']);
+        $this->assertSame(app(OfferSalaryCalculator::class)->calculate('636000.00', 'male')['salary_policy'], $offer->details['salary_policy']);
+    }
+
+    public function test_professional_tax_category_is_required_and_saved_for_reopening(): void
+    {
+        $candidate = $this->candidate();
+        try {
+            app(OfferLetterService::class)->saveDraft($this->admin, $candidate, [...self::details(), 'professional_tax_category' => null]);
+            $this->fail('Missing tax category was accepted.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('professional_tax_category', $exception->errors());
+            $this->assertNull($candidate->fresh()->offerLetter);
+        }
+        $offer = app(OfferLetterService::class)->saveDraft($this->admin, $candidate, [...self::details(), 'annual_package' => '300000', 'professional_tax_category' => 'female']);
+        $this->assertSame('0.00', $offer->details['professional_tax_annual']);
+        $this->assertSame($offer->details['gross_monthly'], $offer->details['net_monthly']);
+        $this->assertSame('female', app(OfferLetterService::class)->defaults($candidate->fresh())['professional_tax_category']);
     }
 
     public function test_legacy_monthly_draft_keeps_its_pdf_until_explicit_save(): void

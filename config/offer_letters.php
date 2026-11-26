@@ -7,6 +7,7 @@ return [
         'employment_type' => 'Full-Time',
         'probation_months' => 3,
         'annual_package' => '300000.00',
+        'professional_tax_category' => null,
         'salary_payment_day' => 1,
         'signatory_name' => 'Shaurya Johari',
         'signatory_designation' => 'HR Manager',
@@ -27,7 +28,7 @@ return [
         'other' => 5,
     ],
     'employer_pf_percent' => 12,
-    'employee_pf_percent' => 12,
+    'employee_pf_percent' => 0,
     // Revised effective 17 September 2026. Employer contribution is capped at 12% of this ceiling.
     // https://www.pib.gov.in/PressReleasePage.aspx?PRID=2313790&lang=2&reg=48
     'pf_monthly_wage_ceiling' => 25000,

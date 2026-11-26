@@ -87,7 +87,9 @@ class OfferLetterResource extends Resource
                 TextInput::make('annual_package')->label('Annual package (CTC)')->prefix('INR')->numeric()->step('0.01')->minValue(1)->maxValue(999999999.99)->required()->live(debounce: 500)
                     ->helperText('Example: enter 600000 for a 6 lakh annual package.'),
                 TextInput::make('salary_payment_day')->label('Salary payment day of following month')->numeric()->integer()->minValue(1)->maxValue(31)->required(),
-                View::make('filament.offer-salary-breakdown')->viewData(fn (Get $get) => ['breakdown' => app(OfferSalaryCalculator::class)->preview($get('annual_package')), 'components' => OfferLetterPdf::SALARY_COMPONENTS])->columnSpanFull(),
+                Select::make('professional_tax_category')->label('Maharashtra Professional Tax category')->options(OfferSalaryCalculator::PROFESSIONAL_TAX_CATEGORIES)->required()->live()->columnSpanFull()
+                    ->helperText('Select the applicable Maharashtra salary category. Choose statutory exemption only after HR verifies eligibility. Tax is calculated on gross salary; the monthly column shows a regular month, with February tax noted separately.'),
+                View::make('filament.offer-salary-breakdown')->viewData(fn (Get $get) => ['breakdown' => app(OfferSalaryCalculator::class)->preview($get('annual_package'), $get('professional_tax_category')), 'components' => OfferLetterPdf::SALARY_COMPONENTS])->columnSpanFull(),
             ]),
             Section::make('Signatory and optional clause')->columns(2)->schema([
                 $text('signatory_name'), $text('signatory_designation'),

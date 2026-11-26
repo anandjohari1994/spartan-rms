@@ -87,7 +87,7 @@ for i in range(1, 6):
     if i == 3:
         text = 'Your salary shall accrue from your actual date of joining, in accordance with this letter and the Employment Agreement.'
     clause(f'3.{i}', text)
-clause('3.6', 'Your estimated monthly Net Salary after employee PF is INR [net_monthly]. TDS, Professional Tax and other applicable payroll deductions are not included in this estimate. Refer to Annexure A.')
+clause('3.6', 'Your estimated regular monthly Net Salary after Professional Tax is INR [net_monthly]. Employee PF, TDS and other applicable payroll deductions are excluded from this estimate. Refer to Annexure A.')
 
 h('4. Pending Client Interview & Deployment Conditions')
 clause('4.1', original_clause('1.1')+' You will be presented to the client for final evaluation as per the client\'s hiring requirements.')
@@ -184,14 +184,15 @@ story.append(PageBreak())
 p('Annexure A: Salary Break-up', ParagraphStyle('Annexure',parent=heading,fontName='Times-Roman',fontSize=16,spaceBefore=0,spaceAfter=10))
 p('Compensation structure referred to in Clause 3 (Compensation) above, for the position of <b>[designation]</b>. Both monthly and annual amounts are shown for each component. All amounts are in INR.')
 rows = [[Paragraph('<b>Salary Component</b>',cell),Paragraph('<b>Monthly (INR)</b>',ParagraphStyle('HeaderRight',parent=cell,alignment=2)),Paragraph('<b>Annual (INR)</b>',ParagraphStyle('HeaderRight',parent=cell,alignment=2))]]
-components = [('Basic Salary','basic'),('House Rent Allowance (HRA)','hra'),('Leave Travel Allowance (LTA)','lta'),('Medical Allowance','medical'),('Conveyance Allowance','conveyance'),('Special Allowance','special'),('[other_label]','other'),('Gross Salary','gross'),("Employer's PF Contribution / Other Benefits, if applicable",'benefits'),('Cost to Company - CTC','ctc'),('Less: Employee PF (estimated)','employee_pf'),('Estimated Net Salary (after employee PF)','net')]
+components = [('Basic Salary','basic'),('House Rent Allowance (HRA)','hra'),('Leave Travel Allowance (LTA)','lta'),('Medical Allowance','medical'),('Conveyance Allowance','conveyance'),('Special Allowance','special'),('[other_label]','other'),('Gross Salary','gross'),('Professional Tax','professional_tax'),('Estimated Net Salary','net'),("PF Contribution / Other Benefits, if applicable",'benefits'),('Cost to Company - CTC','ctc')]
 for label,key in components:
-    amounts = [f'[{key}_monthly]', '[annual_ctc]' if key=='ctc' else f'[{key}_annual]']
+    placeholder_key = 'pt' if key == 'professional_tax' else key
+    amounts = [f'[{placeholder_key}_monthly]', '[annual_ctc]' if key=='ctc' else f'[{placeholder_key}_annual]']
     bold = key in ['gross','ctc','net']
     rows.append([Paragraph(('<b>'+escape(value)+'</b>') if bold else escape(value), ParagraphStyle('SalaryCell',parent=cell,alignment=0 if col==0 else 2)) for col,value in enumerate([label,*amounts])])
 salary = Table(rows,colWidths=[220.5,115.4,115.4],hAlign='LEFT')
-salary.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,0),BLUE),('BACKGROUND',(0,10),(-1,10),BLUE),('BACKGROUND',(0,8),(-1,8),colors.HexColor('#e7eef7')),('GRID',(0,0),(-1,-1),.4,colors.HexColor('#b9c9e2')),('TOPPADDING',(0,0),(-1,-1),5.5),('BOTTOMPADDING',(0,0),(-1,-1),5.5),('LEFTPADDING',(0,0),(-1,-1),5.4),('RIGHTPADDING',(0,0),(-1,-1),5.4),('VALIGN',(0,0),(-1,-1),'TOP')]))
-for row in [0,10]:
+salary.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,0),BLUE),('BACKGROUND',(0,12),(-1,12),BLUE),('BACKGROUND',(0,10),(-1,10),colors.HexColor('#e7eef7')),('BACKGROUND',(0,8),(-1,8),colors.HexColor('#e7eef7')),('GRID',(0,0),(-1,-1),.4,colors.HexColor('#b9c9e2')),('TOPPADDING',(0,0),(-1,-1),5.5),('BOTTOMPADDING',(0,0),(-1,-1),5.5),('LEFTPADDING',(0,0),(-1,-1),5.4),('RIGHTPADDING',(0,0),(-1,-1),5.4),('VALIGN',(0,0),(-1,-1),'TOP')]))
+for row in [0,12]:
     for para in rows[row]:
         para.style = ParagraphStyle('WhiteCell',parent=para.style,textColor=colors.white)
         # Paragraph fragments already contain the initial text color.
@@ -201,7 +202,8 @@ story.append(salary)
 story.append(Spacer(1,18))
 p('Notes:')
 for item in [
-    'Estimated Net Salary = Gross Salary less employee PF under the configured salary policy. TDS, Professional Tax and other applicable payroll deductions are excluded; actual take-home pay may differ.',
+    'Estimated Net Salary = Gross Salary less Professional Tax. Employee PF, TDS and other applicable deductions are excluded from this estimate; actual take-home pay may differ. CTC includes gross salary and employer PF.',
+    'Professional Tax and Net Salary in the monthly column represent a regular month. Maharashtra tax uses the selected category and gross salary. For the INR 2,500 annual slab, tax is INR 200 per month except INR 300 in February, when estimated net salary is INR 100 lower. The INR 2,100 slab is INR 175 each month; exempt cases are nil. Annual estimates include February and assume a full year at unchanged gross salary.',
     'Salary is subject to statutory deductions (TDS, Provident Fund, Professional Tax and others, as applicable).',
     'Components may be revised in accordance with Company policy and applicable law.',
     'No client billing component forms part of, or affects, the salary structure above.',

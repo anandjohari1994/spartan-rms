@@ -10,16 +10,19 @@ with pdfplumber.open(sys.argv[1]) as doc:
     assert len(doc.pages) >= 6
     assert '("Company")' in normalized
     assert '("the Company")' not in normalized
+    assert 'Less: Employee PF (estimated)' not in normalized
+    assert 'after employee PF' not in normalized
     assert 'Reporting Manager' not in normalized
     assert 'Offer of Conditional Employment' not in normalized
-    assert not re.search(r'\[[a-z0-9_]+\]',full), 'Unfilled PDF placeholder'
+    assert '[' not in full and ']' not in full, 'Unfilled or wrapped PDF placeholder'
+    assert re.search(r'Professional Tax [\d,]+\.\d{2} [\d,]+\.\d{2}', normalized), 'Professional Tax amounts missing'
     assert normalized.index('4. Pending Client Interview') < normalized.index('4.1 You have successfully completed Round 1') < normalized.index('4.2 This letter is a conditional offer only') < normalized.index('5. Client Deployment')
     assert 'Clause 3 (Compensation)' in normalized
     assert '5.1 "Client billing' not in normalized and 'rounds."' not in normalized
     assert 'Completed Company joining and employee information forms;' not in normalized
     for removed in ['Employment Commencement Date', 'Onboarding and Documentation.', 'Document Submission', '[valid_until]', '[acceptance_deadline]']:
         assert removed not in normalized, removed
-    for added in ['Estimated Net Salary', 'Employee PF', 'within 24 hours of receiving it', '18 Leaves in a year (12 earned leaves + 6 Sick Leaves)', '1.5 days of leave', 'TRAINING AND DEVELOPMENT', 'JOB ROLES & RESPONSIBILITIES', 'ASSIGNMENT', 'TERMINATION', 'NO HIRE OF EMPLOYEES', 'five consecutive working days', 'Please maintain strict confidentiality of the terms and conditions']:
+    for added in ['Estimated Net Salary', 'Professional Tax', 'Gross Salary', 'Cost to Company - CTC', 'within 24 hours of receiving it', '18 Leaves in a year (12 earned leaves + 6 Sick Leaves)', '1.5 days of leave', 'TRAINING AND DEVELOPMENT', 'JOB ROLES & RESPONSIBILITIES', 'ASSIGNMENT', 'TERMINATION', 'NO HIRE OF EMPLOYEES', 'five consecutive working days', 'Please maintain strict confidentiality of the terms and conditions']:
         assert added in normalized, added
     acceptance = normalized.split('8. Acceptance & Acknowledgement', 1)[1].split('We look forward', 1)[0]
     assert re.fullmatch(r'Please indicate your acceptance by signing and returning the duplicate copy of this letter\. By signing below, I, .+?, confirm that I have read and understood this letter\. I accept this conditional offer on the terms stated above\.', acceptance.strip()), acceptance

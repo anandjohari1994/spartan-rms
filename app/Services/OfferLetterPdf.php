@@ -8,7 +8,7 @@ use Illuminate\Validation\ValidationException;
 
 class OfferLetterPdf
 {
-    public const SALARY_COMPONENTS = ['basic' => 'Basic Salary', 'hra' => 'House Rent Allowance (HRA)', 'lta' => 'Leave Travel Allowance (LTA)', 'medical' => 'Medical Allowance', 'conveyance' => 'Conveyance Allowance', 'special' => 'Special Allowance', 'other' => 'Other Component', 'benefits' => "Employer's PF / Other Benefits"];
+    public const SALARY_COMPONENTS = ['basic' => 'Basic Salary', 'hra' => 'House Rent Allowance (HRA)', 'lta' => 'Leave Travel Allowance (LTA)', 'medical' => 'Medical Allowance', 'conveyance' => 'Conveyance Allowance', 'special' => 'Special Allowance', 'other' => 'Other Component', 'benefits' => "PF Contribution / Other Benefits, if applicable"];
 
     public function values(array $details): array
     {
@@ -24,7 +24,7 @@ class OfferLetterPdf
             1 => 'st', 2 => 'nd', 3 => 'rd', default => 'th'
         });
         if (isset($details['salary_calculation_version'])) {
-            foreach ([...array_keys(self::SALARY_COMPONENTS), 'gross', 'ctc', ...((int) $details['salary_calculation_version'] >= 3 ? ['employee_pf', 'net'] : [])] as $key) {
+            foreach ([...array_keys(self::SALARY_COMPONENTS), 'gross', 'ctc', ...((int) $details['salary_calculation_version'] >= 3 ? ['employee_pf', 'net'] : []), ...((int) $details['salary_calculation_version'] >= 4 ? ['professional_tax'] : [])] as $key) {
                 foreach (['monthly', 'annual'] as $period) {
                     $values[$key.'_'.$period] = number_format((float) $details[$key.'_'.$period], 2);
                 }
